@@ -1,0 +1,682 @@
+{
+  "sql_file": "test.sql",
+  "analysis_timestamp": "2025-08-18T18:42:47.615138",
+  "source_tables": {
+    "ref.currencyrate": {
+      "columns": [
+        "rate",
+        "fromcurrency",
+        "asof",
+        "tocurrency"
+      ],
+      "usage_count": 1
+    },
+    "ref.account": {
+      "columns": [
+        "overdraftlimit",
+        "accountno",
+        "branchcode",
+        "accountid",
+        "status",
+        "customerid",
+        "productcode",
+        "basecurrency"
+      ],
+      "usage_count": 1
+    },
+    "j": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "source": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "staging.transactions": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "a": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "audit.steplog": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "audit.failedtxn": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "core.ledgerwork": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "r": {
+      "columns": [],
+      "usage_count": 1
+    },
+    "core.glwork": {
+      "columns": [],
+      "usage_count": 1
+    }
+  },
+  "target_tables": {
+    "ops.batchregistry": {
+      "columns": [],
+      "usage_count": 1
+    }
+  },
+  "intermediate_tables": {
+    "staging.transactions": {
+      "columns": [
+        "channel",
+        "batchdate",
+        "txnexternalid",
+        "batchid",
+        "counterparty",
+        "accountno",
+        "srcid",
+        "txndate",
+        "amount",
+        "direction",
+        "narrative",
+        "valuedate",
+        "currency",
+        "txntype"
+      ],
+      "usage_count": 1
+    },
+    "<default>.#raw": {
+      "columns": [
+        "channel",
+        "batchdate",
+        "txnexternalid",
+        "batchid",
+        "counterparty",
+        "accountno",
+        "srcid",
+        "txndate",
+        "amount",
+        "direction",
+        "narrative",
+        "valuedate",
+        "currency",
+        "txntype"
+      ],
+      "usage_count": 2
+    },
+    "<default>.#fx": {
+      "columns": [
+        "rate",
+        "asof",
+        "toccy",
+        "fromccy"
+      ],
+      "usage_count": 2
+    },
+    "<default>.#acct": {
+      "columns": [
+        "overdraftlimit",
+        "accountno",
+        "branchcode",
+        "accountid",
+        "status",
+        "customerid",
+        "productcode",
+        "basecurrency"
+      ],
+      "usage_count": 2
+    },
+    "<default>.#stage": {
+      "columns": [
+        "amountbase",
+        "txnexternalid",
+        "overdraftlimit",
+        "srcid",
+        "accountno",
+        "branchcode",
+        "accountid",
+        "txndate",
+        "amount",
+        "valuedate",
+        "currency",
+        "customerid",
+        "productcode",
+        "acctstatus",
+        "basecurrency"
+      ],
+      "usage_count": 1
+    },
+    "r": {
+      "columns": [],
+      "usage_count": 1
+    }
+  },
+  "column_mappings": [
+    {
+      "source_column": "staging.transactions.accountno",
+      "target_column": "<default>.#raw.accountno",
+      "full_path": [
+        "staging.transactions.accountno",
+        "<default>.#raw.accountno"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.amount",
+      "target_column": "<default>.#raw.amount",
+      "full_path": [
+        "staging.transactions.amount",
+        "<default>.#raw.amount"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.batchdate",
+      "target_column": "<default>.#raw.batchdate",
+      "full_path": [
+        "staging.transactions.batchdate",
+        "<default>.#raw.batchdate"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.batchid",
+      "target_column": "<default>.#raw.batchid",
+      "full_path": [
+        "staging.transactions.batchid",
+        "<default>.#raw.batchid"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.channel",
+      "target_column": "<default>.#raw.channel",
+      "full_path": [
+        "staging.transactions.channel",
+        "<default>.#raw.channel"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.counterparty",
+      "target_column": "<default>.#raw.counterparty",
+      "full_path": [
+        "staging.transactions.counterparty",
+        "<default>.#raw.counterparty"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.currency",
+      "target_column": "<default>.#raw.currency",
+      "full_path": [
+        "staging.transactions.currency",
+        "<default>.#raw.currency"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.direction",
+      "target_column": "<default>.#raw.direction",
+      "full_path": [
+        "staging.transactions.direction",
+        "<default>.#raw.direction"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.narrative",
+      "target_column": "<default>.#raw.narrative",
+      "full_path": [
+        "staging.transactions.narrative",
+        "<default>.#raw.narrative"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.srcid",
+      "target_column": "<default>.#raw.srcid",
+      "full_path": [
+        "staging.transactions.srcid",
+        "<default>.#raw.srcid"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.txndate",
+      "target_column": "<default>.#raw.txndate",
+      "full_path": [
+        "staging.transactions.txndate",
+        "<default>.#raw.txndate"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.txnexternalid",
+      "target_column": "<default>.#raw.txnexternalid",
+      "full_path": [
+        "staging.transactions.txnexternalid",
+        "<default>.#raw.txnexternalid"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.txntype",
+      "target_column": "<default>.#raw.txntype",
+      "full_path": [
+        "staging.transactions.txntype",
+        "<default>.#raw.txntype"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "staging.transactions.valuedate",
+      "target_column": "<default>.#raw.valuedate",
+      "full_path": [
+        "staging.transactions.valuedate",
+        "<default>.#raw.valuedate"
+      ],
+      "statement_num": 7,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.currencyrate.asof",
+      "target_column": "<default>.#fx.asof",
+      "full_path": [
+        "ref.currencyrate.asof",
+        "<default>.#fx.asof"
+      ],
+      "statement_num": 8,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.currencyrate.fromcurrency",
+      "target_column": "<default>.#fx.fromccy",
+      "full_path": [
+        "ref.currencyrate.fromcurrency",
+        "<default>.#fx.fromccy"
+      ],
+      "statement_num": 8,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.currencyrate.rate",
+      "target_column": "<default>.#fx.rate",
+      "full_path": [
+        "ref.currencyrate.rate",
+        "<default>.#fx.rate"
+      ],
+      "statement_num": 8,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.currencyrate.tocurrency",
+      "target_column": "<default>.#fx.toccy",
+      "full_path": [
+        "ref.currencyrate.tocurrency",
+        "<default>.#fx.toccy"
+      ],
+      "statement_num": 8,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.accountid",
+      "target_column": "<default>.#acct.accountid",
+      "full_path": [
+        "ref.account.accountid",
+        "<default>.#acct.accountid"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.accountno",
+      "target_column": "<default>.#acct.accountno",
+      "full_path": [
+        "ref.account.accountno",
+        "<default>.#acct.accountno"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.basecurrency",
+      "target_column": "<default>.#acct.basecurrency",
+      "full_path": [
+        "ref.account.basecurrency",
+        "<default>.#acct.basecurrency"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.branchcode",
+      "target_column": "<default>.#acct.branchcode",
+      "full_path": [
+        "ref.account.branchcode",
+        "<default>.#acct.branchcode"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.customerid",
+      "target_column": "<default>.#acct.customerid",
+      "full_path": [
+        "ref.account.customerid",
+        "<default>.#acct.customerid"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.overdraftlimit",
+      "target_column": "<default>.#acct.overdraftlimit",
+      "full_path": [
+        "ref.account.overdraftlimit",
+        "<default>.#acct.overdraftlimit"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.productcode",
+      "target_column": "<default>.#acct.productcode",
+      "full_path": [
+        "ref.account.productcode",
+        "<default>.#acct.productcode"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "ref.account.status",
+      "target_column": "<default>.#acct.status",
+      "full_path": [
+        "ref.account.status",
+        "<default>.#acct.status"
+      ],
+      "statement_num": 9,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.accountid",
+      "target_column": "<default>.#stage.accountid",
+      "full_path": [
+        "<default>.x.accountid",
+        "<default>.#stage.accountid"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.accountno",
+      "target_column": "<default>.#stage.accountno",
+      "full_path": [
+        "<default>.x.accountno",
+        "<default>.#stage.accountno"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.acctstatus",
+      "target_column": "<default>.#stage.acctstatus",
+      "full_path": [
+        "<default>.x.acctstatus",
+        "<default>.#stage.acctstatus"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.amount",
+      "target_column": "<default>.#stage.amount",
+      "full_path": [
+        "<default>.x.amount",
+        "<default>.#stage.amount"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.amount",
+      "target_column": "<default>.#stage.amountbase",
+      "full_path": [
+        "<default>.x.amount",
+        "<default>.#stage.amountbase"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.fxrate",
+      "target_column": "<default>.#stage.amountbase",
+      "full_path": [
+        "<default>.x.fxrate",
+        "<default>.#stage.amountbase"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.basecurrency",
+      "target_column": "<default>.#stage.basecurrency",
+      "full_path": [
+        "<default>.x.basecurrency",
+        "<default>.#stage.basecurrency"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.branchcode",
+      "target_column": "<default>.#stage.branchcode",
+      "full_path": [
+        "<default>.x.branchcode",
+        "<default>.#stage.branchcode"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.currency",
+      "target_column": "<default>.#stage.currency",
+      "full_path": [
+        "<default>.x.currency",
+        "<default>.#stage.currency"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.customerid",
+      "target_column": "<default>.#stage.customerid",
+      "full_path": [
+        "<default>.x.customerid",
+        "<default>.#stage.customerid"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.overdraftlimit",
+      "target_column": "<default>.#stage.overdraftlimit",
+      "full_path": [
+        "<default>.x.overdraftlimit",
+        "<default>.#stage.overdraftlimit"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.productcode",
+      "target_column": "<default>.#stage.productcode",
+      "full_path": [
+        "<default>.x.productcode",
+        "<default>.#stage.productcode"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.srcid",
+      "target_column": "<default>.#stage.srcid",
+      "full_path": [
+        "<default>.x.srcid",
+        "<default>.#stage.srcid"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.txndate",
+      "target_column": "<default>.#stage.txndate",
+      "full_path": [
+        "<default>.x.txndate",
+        "<default>.#stage.txndate"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.txnexternalid",
+      "target_column": "<default>.#stage.txnexternalid",
+      "full_path": [
+        "<default>.x.txnexternalid",
+        "<default>.#stage.txnexternalid"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    },
+    {
+      "source_column": "<default>.x.valuedate",
+      "target_column": "<default>.#stage.valuedate",
+      "full_path": [
+        "<default>.x.valuedate",
+        "<default>.#stage.valuedate"
+      ],
+      "statement_num": 10,
+      "transformation_steps": 1
+    }
+  ],
+  "table_relationships": {
+    "staging.transactions": [
+      "<default>.#raw"
+    ],
+    "ref.currencyrate": [
+      "<default>.#fx"
+    ],
+    "ref.account": [
+      "<default>.#acct"
+    ],
+    "<default>.#acct": [
+      "<default>.#stage"
+    ],
+    "<default>.#fx": [
+      "<default>.#stage"
+    ],
+    "<default>.#raw": [
+      "<default>.#stage"
+    ]
+  },
+  "processing_stages": [
+    {
+      "statement_num": 3,
+      "statement_type": "OTHER",
+      "source_tables": [],
+      "target_tables": [],
+      "intermediate_tables": [],
+      "column_mappings_count": 0
+    },
+    {
+      "statement_num": 4,
+      "statement_type": "DELETE",
+      "source_tables": [],
+      "target_tables": [],
+      "intermediate_tables": [],
+      "column_mappings_count": 0
+    },
+    {
+      "statement_num": 5,
+      "statement_type": "DELETE",
+      "source_tables": [],
+      "target_tables": [],
+      "intermediate_tables": [],
+      "column_mappings_count": 0
+    },
+    {
+      "statement_num": 6,
+      "statement_type": "DELETE",
+      "source_tables": [],
+      "target_tables": [],
+      "intermediate_tables": [],
+      "column_mappings_count": 0
+    },
+    {
+      "statement_num": 7,
+      "statement_type": "OTHER",
+      "source_tables": [
+        "staging.transactions"
+      ],
+      "target_tables": [
+        "<default>.#raw"
+      ],
+      "intermediate_tables": [],
+      "column_mappings_count": 14
+    },
+    {
+      "statement_num": 8,
+      "statement_type": "INSERT",
+      "source_tables": [
+        "ref.currencyrate"
+      ],
+      "target_tables": [
+        "<default>.#fx"
+      ],
+      "intermediate_tables": [],
+      "column_mappings_count": 4
+    },
+    {
+      "statement_num": 9,
+      "statement_type": "INSERT",
+      "source_tables": [
+        "ref.account"
+      ],
+      "target_tables": [
+        "<default>.#acct"
+      ],
+      "intermediate_tables": [],
+      "column_mappings_count": 8
+    },
+    {
+      "statement_num": 10,
+      "statement_type": "CTE",
+      "source_tables": [
+        "<default>.#acct",
+        "<default>.#fx",
+        "<default>.#raw"
+      ],
+      "target_tables": [
+        "<default>.#stage"
+      ],
+      "intermediate_tables": [],
+      "column_mappings_count": 31
+    }
+  ]
+}

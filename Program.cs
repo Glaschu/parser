@@ -1,21 +1,13 @@
-﻿// To run this code, you need to add the following NuGet package to your project:
-// Microsoft.SqlServer.TransactSql.ScriptDom
-
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace SqlParser
 {
     #region Data Models
 
-    /// <summary>
-    /// Represents a column with its table context, used for lineage mapping.
-    /// Using a class for reference equality and easier dictionary keys.
-    /// </summary>
     public class TableColumn : IEquatable<TableColumn>
     {
         public string TableName { get; }
@@ -27,399 +19,412 @@ namespace SqlParser
             ColumnName = columnName?.ToLowerInvariant() ?? string.Empty;
         }
 
-        public bool IsTemporary => TableName.StartsWith("#") || TableName.StartsWith("@");
+        public bool IsTemporary => TableName.StartsWith("#");
 
-        public bool Equals(TableColumn other)
+        public bool Equals(TableColumn? other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return TableName == other.TableName && ColumnName == other.ColumnName;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((TableColumn)obj);
-        }
+        public override bool Equals(object? obj) => Equals(obj as TableColumn);
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(TableName, ColumnName);
-        }
+        public override int GetHashCode() => HashCode.Combine(TableName, ColumnName);
 
         public override string ToString() => $"[{TableName}].[{ColumnName}]";
     }
 
-    /// <summary>
-    /// Represents an in-memory model of a temporary table's schema.
-    /// </summary>
-    public class InMemoryTable
-    {
-        public string TableName { get; set; }
-        public List<string> Columns { get; } = new List<string>();
-    }
-
-    /// <summary>
-    /// Represents a single step in the data lineage graph.
-    /// </summary>
-    public class LineageFragment
-    {
-        public TableColumn Target { get; set; }
-        public TableColumn Source { get; set; }
-        public string Expression { get; set; }
-    }
-
-    /// <summary>
-    /// Represents the final, end-to-end parsed information from a stored procedure.
-    /// </summary>
     public class ProcedureAnalysis
     {
-        public string ProcedureName { get; set; }
+        public string ProcedureName { get; set; } = null!;
         public HashSet<string> InputTables { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> OutputTables { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public List<LineageFragment> FinalLineages { get; } = new List<LineageFragment>();
-        public List<string> Warnings { get; } = new List<string>();
+        public List<MergePattern> MergePatterns { get; } = new List<MergePattern>();
+        public List<TempTablePattern> TempTablePatterns { get; } = new List<TempTablePattern>();
 
         public void PrintResults()
         {
             Console.WriteLine($"\n--- SQL Analysis for Procedure: {ProcedureName} ---");
-            if (Warnings.Any())
-            {
-                Console.WriteLine("\n[Warnings]");
-                Warnings.ForEach(w => Console.WriteLine($"  - {w}"));
-            }
             Console.WriteLine("\n[Input Tables]");
-            InputTables.OrderBy(t => t).ToList().ForEach(Console.WriteLine);
+            InputTables.OrderBy(t => t).ToList().ForEach(t => Console.WriteLine($"  - {t}"));
             Console.WriteLine("\n[Output Tables]");
-            OutputTables.OrderBy(t => t).ToList().ForEach(Console.WriteLine);
+            OutputTables.OrderBy(t => t).ToList().ForEach(t => Console.WriteLine($"  - {t}"));
             Console.WriteLine("\n[Column Lineage (End-to-End)]");
             foreach (var lineage in FinalLineages.OrderBy(l => l.Target.TableName).ThenBy(l => l.Target.ColumnName))
             {
-                Console.WriteLine($"{lineage.Target} <-- {lineage.Source} (Expression: {lineage.Expression})");
+                Console.WriteLine($"  {lineage.Target} <-- {lineage.Source}");
             }
             Console.WriteLine($"--- End of Analysis for {ProcedureName} ---");
         }
+
+        public void SaveMetadataToFile(string filePath)
+        {
+            var metadata = new
+            {
+                procedure_name = ProcedureName,
+                source_tables = InputTables.OrderBy(t => t).ToList(),
+                target_tables = OutputTables.OrderBy(t => t).ToList(),
+                column_lineages = FinalLineages.Select(l => new
+                {
+                    source_table = l.Source.TableName,
+                    source_column = l.Source.ColumnName,
+                    target_table = l.Target.TableName,
+                    target_column = l.Target.ColumnName
+                }).OrderBy(l => l.target_table).ThenBy(l => l.target_column).ToList(),
+                merge_patterns = MergePatterns.Select(m => new
+                {
+                    source_table = m.SourceTable,
+                    target_table = m.TargetTable,
+                    join_columns = m.JoinColumns,
+                    update_columns = m.UpdateColumns,
+                    insert_columns = m.InsertColumns
+                }).ToList(),
+                temp_table_patterns = TempTablePatterns.Select(t => new
+                {
+                    temp_table_name = t.TempTableName,
+                    source_pattern = t.SourcePattern,
+                    columns = t.Columns,
+                    is_intermediate = t.IsIntermediate
+                }).ToList(),
+                analysis_timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            };
+
+            string json = System.Text.Json.JsonSerializer.Serialize(metadata, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            File.WriteAllText(filePath, json);
+            Console.WriteLine($"📄 Metadata saved to: {filePath}");
+            Console.WriteLine($"📊 Included {metadata.column_lineages.Count} column lineage mappings");
+            Console.WriteLine($"📊 Included {metadata.merge_patterns.Count} MERGE patterns");
+            Console.WriteLine($"📊 Included {metadata.temp_table_patterns.Count} temp table patterns");
+        }
+    }
+
+    public class LineageFragment
+    {
+        public TableColumn Target { get; set; } = null!;
+        public TableColumn Source { get; set; } = null!;
+    }
+
+    public class MergePattern
+    {
+        public string SourceTable { get; set; } = null!;
+        public string TargetTable { get; set; } = null!;
+        public List<string> JoinColumns { get; } = new List<string>();
+        public List<string> UpdateColumns { get; } = new List<string>();
+        public List<string> InsertColumns { get; } = new List<string>();
+    }
+
+    public class TempTablePattern
+    {
+        public string TempTableName { get; set; } = null!;
+        public string SourcePattern { get; set; } = null!;
+        public List<string> Columns { get; } = new List<string>();
+        public bool IsIntermediate { get; set; }
     }
 
     #endregion
 
-    /// <summary>
-    /// The main stateful visitor class that traverses the SQL Abstract Syntax Tree (AST).
-    /// </summary>
-    public class ProcedureVisitor : TSqlFragmentVisitor
+    public class LineageVisitor : TSqlFragmentVisitor
     {
-        private ProcedureAnalysis _analysis;
-        private readonly Stack<Dictionary<string, string>> _aliasScope = new Stack<Dictionary<string, string>>();
-        private readonly Stack<Dictionary<string, List<string>>> _cteScope = new Stack<Dictionary<string, List<string>>>();
-        private readonly Stack<Dictionary<string, StringLiteral>> _variableScope = new Stack<Dictionary<string, StringLiteral>>();
-
-        // Stateful tracking for temporary objects
-        private readonly Dictionary<string, InMemoryTable> _tempTables = new Dictionary<string, InMemoryTable>(StringComparer.OrdinalIgnoreCase);
+        private readonly ProcedureAnalysis _analysis = new ProcedureAnalysis();
+        private readonly Stack<Dictionary<string, string>> _aliasStack = new Stack<Dictionary<string, string>>();
         private readonly List<LineageFragment> _lineageFragments = new List<LineageFragment>();
+        private readonly Dictionary<string, List<string>> _cteColumnMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<string>> _tempTableSchema = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-        public ProcedureAnalysis CurrentAnalysis => _analysis;
-        
-        #region Entry Point and State Management
+        public ProcedureAnalysis Analysis => _analysis;
 
         public override void Visit(CreateProcedureStatement node)
         {
-            _analysis = new ProcedureAnalysis { ProcedureName = GetTableName(node.ProcedureReference.Name) };
-            _variableScope.Push(new Dictionary<string, StringLiteral>(StringComparer.OrdinalIgnoreCase));
-            
-            base.Visit(node); // This will traverse the entire procedure body
-
-            ResolveAndMergeLineage(); // Perform final lineage resolution after traversal
-            
-            _variableScope.Pop();
+            _analysis.ProcedureName = GetMultipathName(node.ProcedureReference.Name);
+            Console.WriteLine($"DEBUG: Starting to visit procedure: {_analysis.ProcedureName}");
+            base.Visit(node);
+            Console.WriteLine($"DEBUG: Finished visiting procedure");
         }
-
-        #endregion
-
-        #region Temp Table Schema Tracking
 
         public override void Visit(CreateTableStatement node)
         {
             var tableName = GetTableName(node.SchemaObjectName);
-            if (IsTempTable(tableName))
+            if (tableName != null && tableName.StartsWith("#"))
             {
-                var tableModel = new InMemoryTable { TableName = tableName };
-                foreach (var colDef in node.Definition.ColumnDefinitions)
-                {
-                    tableModel.Columns.Add(colDef.ColumnIdentifier.Value);
-                }
-                _tempTables[tableName] = tableModel;
+                _tempTableSchema[tableName] = node.Definition.ColumnDefinitions.Select(c => c.ColumnIdentifier.Value.ToLowerInvariant()).ToList();
             }
-            base.Visit(node);
         }
-
-        public override void Visit(SelectStatement node)
-        {
-            // Handle SELECT ... INTO #TempTable
-            if (node.Into != null && IsTempTable(GetTableName(node.Into)))
-            {
-                var tableName = GetTableName(node.Into);
-                var tableModel = new InMemoryTable { TableName = tableName };
-                if (node.QueryExpression is QuerySpecification querySpec)
-                {
-                    int unnamedColCount = 0;
-                    foreach (var selectElement in querySpec.SelectElements)
-                    {
-                        if (selectElement is SelectScalarExpression scalarExpr)
-                        {
-                            var colName = scalarExpr.ColumnName?.Value ?? $"_unnamed_{++unnamedColCount}";
-                            tableModel.Columns.Add(colName);
-                        }
-                        // Note: SELECT * INTO is complex as it requires schema lookup of the source.
-                        // This implementation focuses on explicitly defined columns.
-                    }
-                }
-                _tempTables[tableName] = tableModel;
-            }
-            
-            ProcessSelectStatement(node, node.Into != null ? GetTableName(node.Into) : null);
-        }
-
-        #endregion
-
-        #region Data Modification and Lineage Fragment Creation
 
         public override void Visit(InsertStatement node)
         {
-            if (_analysis == null) return;
-            var targetTable = GetTableName(node.InsertSpecification.Target as SchemaObjectName);
-            if (targetTable == null) return;
+            Console.WriteLine($"DEBUG: Processing INSERT statement");
             
-            if (!IsTempTable(targetTable)) _analysis.OutputTables.Add(targetTable);
-
-            if (node.InsertSpecification.InsertSource is SelectInsertSource selectSource)
+            if (!(node.InsertSpecification.Target is NamedTableReference targetRef)) 
             {
-                ProcessSelectStatement(selectSource.Select, targetTable, node.InsertSpecification.Columns);
+                Console.WriteLine($"DEBUG: INSERT target is not a named table reference");
+                return;
             }
-        }
-
-        public override void Visit(UpdateStatement node)
-        {
-            // This logic remains largely the same, as updates typically target permanent tables.
-            // If updating a temp table, fragments would be created, but that's an edge case.
-            if (_analysis == null) return;
-            var targetTable = GetTableName(node.UpdateSpecification.Target as SchemaObjectName);
-            if (targetTable == null) return;
             
-            if (!IsTempTable(targetTable)) _analysis.OutputTables.Add(targetTable);
+            var targetTableName = GetMultipathName(targetRef.SchemaObject);
+            Console.WriteLine($"DEBUG: INSERT target table: {targetTableName}");
 
-            _aliasScope.Push(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
-            if (node.UpdateSpecification.FromClause != null) ProcessFromClause(node.UpdateSpecification.FromClause);
-            else _analysis.InputTables.Add(targetTable);
-
-            foreach (var setClause in node.UpdateSpecification.SetClauses.OfType<AssignmentSetClause>())
+            if (!IsCte(targetTableName) && !targetTableName.StartsWith("#")) 
             {
-                var targetColumn = setClause.Column.MultiPartIdentifier.Identifiers.Last().Value;
-                ProcessColumnExpression(new TableColumn(targetTable, targetColumn), setClause.NewValue);
+                _analysis.OutputTables.Add(targetTableName);
+                Console.WriteLine($"DEBUG: Added to output tables: {targetTableName}");
             }
-            _aliasScope.Pop();
+
+            if (node.InsertSpecification.InsertSource is SelectInsertSource selectSource && selectSource.Select is QuerySpecification querySpec)
+            {
+                var targetColumns = GetTargetColumns(node.InsertSpecification, targetTableName);
+                Console.WriteLine($"DEBUG: Target columns count: {targetColumns.Count}");
+                
+                ProcessSelect(querySpec, targetTableName, targetColumns);
+            }
+            else
+            {
+                Console.WriteLine($"DEBUG: INSERT source is not SelectInsertSource or not QuerySpecification");
+            }
         }
 
         public override void Visit(MergeStatement node)
         {
-            if (_analysis == null) return;
-            var targetTable = GetTableName(node.MergeSpecification.Target as SchemaObjectName);
-            if (targetTable == null) return;
-
-            if (!IsTempTable(targetTable)) _analysis.OutputTables.Add(targetTable);
-            ProcessTableReference(node.MergeSpecification.TableReference);
-
-            foreach (var action in node.MergeSpecification.ActionClauses)
+            Console.WriteLine($"DEBUG: Processing MERGE statement");
+            
+            // Extract target table
+            if (node.MergeSpecification?.Target is NamedTableReference targetRef)
             {
-                if (action.Action is UpdateMergeAction updateAction)
+                var targetTableName = GetMultipathName(targetRef.SchemaObject);
+                Console.WriteLine($"DEBUG: MERGE target table: {targetTableName}");
+                
+                if (!IsCte(targetTableName) && !targetTableName.StartsWith("#")) 
                 {
-                    foreach (var setClause in updateAction.SetClauses.OfType<AssignmentSetClause>())
-                    {
-                        var targetColumn = setClause.Column.MultiPartIdentifier.Identifiers.Last().Value;
-                        ProcessColumnExpression(new TableColumn(targetTable, targetColumn), setClause.NewValue);
-                    }
+                    _analysis.OutputTables.Add(targetTableName);
                 }
-                else if (action.Action is InsertMergeAction insertAction)
+
+                // Create simplified MERGE pattern - we'll let Python handle the detailed analysis
+                var mergePattern = new MergePattern
                 {
-                    for (int i = 0; i < insertAction.Source.RowValues.Count; i++)
-                    {
-                        var valueExpr = insertAction.Source.RowValues[i];
-                        var targetColumnName = (insertAction.Columns.Count > i) ? insertAction.Columns[i].Value : _tempTables[targetTable].Columns[i];
-                        ProcessColumnExpression(new TableColumn(targetTable, targetColumnName), valueExpr);
-                    }
-                }
+                    SourceTable = "temp_table_pattern", // Placeholder - will be refined by Python
+                    TargetTable = targetTableName
+                };
+                
+                _analysis.MergePatterns.Add(mergePattern);
+                Console.WriteLine($"DEBUG: Added MERGE pattern for target: {targetTableName}");
             }
+            
+            base.Visit(node);
         }
 
-        #endregion
-
-        #region Core Processing Logic
-
-        private void ProcessSelectStatement(SelectStatement selectStatement, string targetTable, IList<ColumnReferenceExpression> targetColumns = null)
+        public override void Visit(WithCtesAndXmlNamespaces node)
         {
-            _aliasScope.Push(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
-
-            if (selectStatement.QueryExpression is QuerySpecification querySpec)
+            _aliasStack.Push(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+            foreach (var cte in node.CommonTableExpressions)
             {
-                if (querySpec.FromClause != null) ProcessFromClause(querySpec.FromClause);
+                var cteName = cte.ExpressionName.Value;
+                var cteColumns = cte.Columns.Select(c => c.Value.ToLowerInvariant()).ToList();
+                _cteColumnMap[cteName] = cteColumns;
 
-                if (targetTable != null)
+                if (cte.QueryExpression is QuerySpecification querySpec)
                 {
-                    for (int i = 0; i < querySpec.SelectElements.Count; i++)
+                    ProcessSelect(querySpec, cteName, cteColumns, manageStack: false);
+                }
+            }
+            base.Visit(node);
+            _aliasStack.Pop();
+        }
+
+        private void ProcessSelect(QuerySpecification querySpec, string targetName, List<string> targetCols, bool manageStack = true)
+        {
+            Console.WriteLine($"DEBUG: ProcessSelect - Target: {targetName}, Target columns: {targetCols.Count}");
+            
+            if (manageStack) _aliasStack.Push(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+            
+            var fromVisitor = new FromClauseVisitor();
+            querySpec.FromClause?.Accept(fromVisitor);
+            var currentAliases = _aliasStack.Count > 0 ? _aliasStack.Peek() : new Dictionary<string, string>();
+            foreach(var alias in fromVisitor.TableAliases) currentAliases[alias.Key] = alias.Value;
+
+            Console.WriteLine($"DEBUG: Found {fromVisitor.TableAliases.Count} table aliases");
+            Console.WriteLine($"DEBUG: SELECT elements count: {querySpec.SelectElements.Count}");
+
+            for (int i = 0; i < querySpec.SelectElements.Count; i++)
+            {
+                if (i >= targetCols.Count) break;
+
+                var targetCol = new TableColumn(targetName, targetCols[i]);
+                var selectElement = querySpec.SelectElements[i];
+
+                Console.WriteLine($"DEBUG: Processing element {i}: target column {targetCol}");
+
+                if (selectElement is SelectScalarExpression sse)
+                {
+                    var sourceCols = ExtractSourceColumns(sse.Expression);
+                    Console.WriteLine($"DEBUG: Found {sourceCols.Count} source columns for {targetCol}");
+                    
+                    foreach (var sourceCol in sourceCols)
                     {
-                        var selectElement = querySpec.SelectElements[i];
-                        if (selectElement is SelectScalarExpression scalarExpr)
-                        {
-                            string targetColumnName;
-                            if (targetColumns != null && targetColumns.Count > i)
-                            {
-                                targetColumnName = targetColumns[i].MultiPartIdentifier.Identifiers.Last().Value;
-                            }
-                            else if (_tempTables.ContainsKey(targetTable) && _tempTables[targetTable].Columns.Count > i)
-                            {
-                                targetColumnName = _tempTables[targetTable].Columns[i];
-                            }
-                            else
-                            {
-                                targetColumnName = scalarExpr.ColumnName?.Value ?? $"_unnamed_{i+1}";
-                            }
-                            
-                            ProcessColumnExpression(new TableColumn(targetTable, targetColumnName), scalarExpr.Expression);
-                        }
+                        Console.WriteLine($"DEBUG: Adding lineage: {sourceCol} -> {targetCol}");
+                        _lineageFragments.Add(new LineageFragment { Target = targetCol, Source = sourceCol });
+                        if (!sourceCol.IsTemporary && !IsCte(sourceCol.TableName)) _analysis.InputTables.Add(sourceCol.TableName);
                     }
+                }
+                else
+                {
+                    Console.WriteLine($"DEBUG: Select element is not SelectScalarExpression: {selectElement.GetType().Name}");
+                }
+            }
+
+            if (manageStack) _aliasStack.Pop();
+        }
+
+        private List<TableColumn> ExtractSourceColumns(TSqlFragment expression)
+        {
+            var allAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach(var scope in _aliasStack.Reverse()) 
+            {
+                foreach(var alias in scope) allAliases[alias.Key] = alias.Value;
+            }
+            var visitor = new ColumnReferenceVisitor(allAliases);
+            expression.Accept(visitor);
+            return visitor.SourceColumns;
+        }
+
+        private List<string> GetTargetColumns(InsertSpecification insertSpec, string targetTableName)
+        {
+            if (insertSpec.Columns.Any())
+            {
+                return insertSpec.Columns.Select(c => c.MultiPartIdentifier.Identifiers.Last().Value.ToLowerInvariant()).ToList();
+            }
+            if (_tempTableSchema.TryGetValue(targetTableName, out var cols)) return cols;
+            if (_cteColumnMap.TryGetValue(targetTableName, out var cteCols)) return cteCols;
+            return new List<string>();
+        }
+
+        public void ResolveAndMergeLineage()
+        {
+            Console.WriteLine($"DEBUG: Starting ResolveAndMergeLineage with {_lineageFragments.Count} fragments");
+            
+            // Debug: Print all fragments
+            foreach (var fragment in _lineageFragments)
+            {
+                Console.WriteLine($"DEBUG: Fragment: {fragment.Source} -> {fragment.Target}");
+            }
+            
+            // Group fragments by target to handle multiple sources per target
+            var groupedFragments = _lineageFragments.GroupBy(f => f.Target).ToList();
+            var lineageMap = new Dictionary<TableColumn, TableColumn>();
+            
+            foreach (var group in groupedFragments)
+            {
+                // For now, just take the first source if there are multiple
+                // This could be enhanced to handle complex multi-source scenarios
+                lineageMap[group.Key] = group.First().Source;
+            }
+
+            // Get all final fragments (non-CTE, non-temp table targets)
+            var finalFragments = _lineageFragments.Where(f => !IsCte(f.Target.TableName) && !f.Target.IsTemporary).ToList();
+
+            Console.WriteLine($"DEBUG: Found {_lineageFragments.Count} total lineage fragments");
+            Console.WriteLine($"DEBUG: Found {finalFragments.Count} final fragments (non-temp, non-CTE)");
+
+            foreach (var fragment in finalFragments)
+            {
+                Console.WriteLine($"DEBUG: Processing final fragment: {fragment.Source} -> {fragment.Target}");
+                
+                var originalSource = FindOriginalSource(fragment.Source, lineageMap);
+                
+                Console.WriteLine($"DEBUG: Original source resolved to: {originalSource}");
+                Console.WriteLine($"DEBUG: Original source IsTemporary: {originalSource.IsTemporary}, IsCte: {IsCte(originalSource.TableName)}");
+                
+                // Only add if source is also non-temp and non-CTE
+                if (!IsCte(originalSource.TableName) && !originalSource.IsTemporary)
+                {
+                    _analysis.FinalLineages.Add(new LineageFragment
+                    {
+                        Target = fragment.Target,
+                        Source = originalSource
+                    });
+                    
+                    Console.WriteLine($"DEBUG: Added lineage: {originalSource} -> {fragment.Target}");
+                }
+                else
+                {
+                    Console.WriteLine($"DEBUG: Skipped lineage (temp/CTE source): {originalSource} -> {fragment.Target}");
                 }
             }
             
-            _aliasScope.Pop();
+            Console.WriteLine($"DEBUG: Final lineages count: {_analysis.FinalLineages.Count}");
         }
 
-        private void ProcessColumnExpression(TableColumn target, TSqlFragment expression)
-        {
-            var columnVisitor = new ColumnReferenceVisitor(_aliasScope.Count > 0 ? _aliasScope.Peek() : new Dictionary<string, string>());
-            expression.Accept(columnVisitor);
-
-            foreach (var (sourceTable, sourceColumn) in columnVisitor.ReferencedColumns)
-            {
-                var source = new TableColumn(sourceTable, sourceColumn);
-                _lineageFragments.Add(new LineageFragment
-                {
-                    Target = target,
-                    Source = source,
-                    Expression = GetFragmentText(expression)
-                });
-                
-                // Add to inputs if it's a permanent table
-                if (!IsTempTable(sourceTable) && !IsCte(sourceTable))
-                {
-                    _analysis.InputTables.Add(sourceTable);
-                }
-            }
-        }
-
-        private void ProcessFromClause(FromClause fromClause)
-        {
-            foreach (var tableReference in fromClause.TableReferences)
-            {
-                ProcessTableReference(tableReference);
-            }
-        }
-
-        private void ProcessTableReference(TableReference tableReference)
-        {
-            if (tableReference is NamedTableReference namedTable)
-            {
-                var tableName = GetTableName(namedTable.SchemaObject);
-                var alias = namedTable.Alias?.Value ?? tableName;
-
-                if (!IsTempTable(tableName) && !IsCte(tableName))
-                {
-                    _analysis.InputTables.Add(tableName);
-                }
-                
-                if (_aliasScope.Count > 0) _aliasScope.Peek()[alias] = tableName;
-            }
-            else if (tableReference is QualifiedJoin qualifiedJoin)
-            {
-                ProcessTableReference(qualifiedJoin.FirstTableReference);
-                ProcessTableReference(qualifiedJoin.SecondTableReference);
-            }
-            // Other cases like QueryDerivedTable...
-        }
-
-        #endregion
-
-        #region Lineage Resolution
-        
-        private void ResolveAndMergeLineage()
-        {
-            var lineageMap = _lineageFragments.ToDictionary(f => f.Target, f => f);
-
-            foreach (var finalFragment in _lineageFragments.Where(f => !f.Target.IsTemporary))
-            {
-                var finalLineage = new LineageFragment
-                {
-                    Target = finalFragment.Target,
-                    Source = FindOriginalSource(finalFragment.Source, lineageMap),
-                    Expression = finalFragment.Expression
-                };
-                _analysis.FinalLineages.Add(finalLineage);
-            }
-        }
-
-        private TableColumn FindOriginalSource(TableColumn immediateSource, Dictionary<TableColumn, LineageFragment> map)
+        private TableColumn FindOriginalSource(TableColumn immediateSource, Dictionary<TableColumn, TableColumn> map)
         {
             var current = immediateSource;
-            var visited = new HashSet<TableColumn>(); // To prevent infinite loops
-
-            while (current.IsTemporary && map.ContainsKey(current) && !visited.Contains(current))
+            var visited = new HashSet<TableColumn>();
+            
+            Console.WriteLine($"DEBUG: FindOriginalSource starting with {current}");
+            Console.WriteLine($"DEBUG: IsTemporary: {current.IsTemporary}, IsCte: {IsCte(current.TableName)}");
+            
+            while ((IsCte(current.TableName) || current.IsTemporary) && map.ContainsKey(current) && visited.Add(current))
             {
-                visited.Add(current);
-                current = map[current].Source;
+                var next = map[current];
+                Console.WriteLine($"DEBUG: Tracing {current} -> {next}");
+                current = next;
+                Console.WriteLine($"DEBUG: New current IsTemporary: {current.IsTemporary}, IsCte: {IsCte(current.TableName)}");
             }
+            
+            Console.WriteLine($"DEBUG: FindOriginalSource ended with {current}");
             return current;
         }
 
-        #endregion
-
-        #region Utility Methods
-        private bool IsTempTable(string tableName) => tableName != null && (tableName.StartsWith("#") || tableName.StartsWith("@"));
-        private bool IsCte(string name) => _cteScope.Count > 0 && _cteScope.Peek().ContainsKey(name);
-        private static string GetTableName(SchemaObjectName schemaObjectName) => schemaObjectName == null ? null : string.Join(".", schemaObjectName.Identifiers.Select(id => id.Value));
-        private static string GetFragmentText(TSqlFragment fragment) => (fragment == null || fragment.ScriptTokenStream == null) ? string.Empty : string.Join("", fragment.ScriptTokenStream.Skip(fragment.FirstTokenIndex).Take(fragment.LastTokenIndex - fragment.FirstTokenIndex + 1).Select(t => t.Text));
-        // Note: Dynamic SQL and CTE logic would be integrated here as in the previous version. They are omitted for brevity but would be included in a full merge.
-        #endregion
+        private bool IsCte(string tableName) => _cteColumnMap.ContainsKey(tableName);
+        private string GetMultipathName(SchemaObjectName name) => string.Join(".", name.Identifiers.Select(i => i.Value));
+        private string? GetTableName(SchemaObjectName? name) => name?.BaseIdentifier?.Value;
     }
 
-    #region Supporting Visitor and Main Program
+    public class FromClauseVisitor : TSqlFragmentVisitor
+    {
+        public Dictionary<string, string> TableAliases { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        public override void Visit(NamedTableReference node)
+        {
+            var tableName = GetMultipathName(node.SchemaObject);
+            var alias = node.Alias?.Value ?? tableName;
+            TableAliases[alias] = tableName;
+        }
+
+        private string GetMultipathName(SchemaObjectName name) => string.Join(".", name.Identifiers.Select(i => i.Value));
+
+        public override void Visit(QualifiedJoin node)
+        {
+            node.FirstTableReference.Accept(this);
+            node.SecondTableReference.Accept(this);
+        }
+    }
 
     public class ColumnReferenceVisitor : TSqlFragmentVisitor
     {
-        private readonly Dictionary<string, string> _aliases;
-        public List<(string table, string column)> ReferencedColumns { get; } = new List<(string, string)>();
+        private readonly Dictionary<string, string> _aliasMap;
+        public List<TableColumn> SourceColumns { get; } = new List<TableColumn>();
 
-        public ColumnReferenceVisitor(Dictionary<string, string> aliases)
+        public ColumnReferenceVisitor(Dictionary<string, string> aliasMap)
         {
-            _aliases = aliases ?? new Dictionary<string, string>();
+            _aliasMap = aliasMap;
         }
 
         public override void Visit(ColumnReferenceExpression node)
         {
-            string column = node.MultiPartIdentifier.Identifiers.Last().Value;
-            string tableAliasOrName = "Unknown"; 
+            var colName = node.MultiPartIdentifier.Identifiers.Last().Value;
+            string? tableAlias = node.MultiPartIdentifier.Identifiers.Count > 1 ? node.MultiPartIdentifier.Identifiers.First().Value : null;
 
-            if (node.MultiPartIdentifier.Identifiers.Count > 1)
+            if (tableAlias != null && _aliasMap.TryGetValue(tableAlias, out var tableName))
             {
-                tableAliasOrName = string.Join(".", node.MultiPartIdentifier.Identifiers.Take(node.MultiPartIdentifier.Identifiers.Count - 1).Select(i => i.Value));
+                SourceColumns.Add(new TableColumn(tableName, colName));
             }
-            
-            if (_aliases.TryGetValue(tableAliasOrName, out var realTableName))
+            else if (tableAlias != null)
             {
-                ReferencedColumns.Add((realTableName, column));
-            }
-            else
-            {
-                ReferencedColumns.Add((tableAliasOrName, column));
+                SourceColumns.Add(new TableColumn(tableAlias, colName));
             }
         }
     }
@@ -428,64 +433,31 @@ namespace SqlParser
     {
         static void Main(string[] args)
         {
-            string sqlScript = @"
-                CREATE PROCEDURE dbo.usp_ProcessDailySales
-                AS
-                BEGIN
-                    -- Create a temp table to stage data
-                    CREATE TABLE #StagedSales (
-                        SaleID INT,
-                        ProductName NVARCHAR(100),
-                        Region NVARCHAR(50),
-                        SaleAmount DECIMAL(18, 2)
-                    );
+            Console.WriteLine("Parsing SQL script...");
+            string sqlScript = File.ReadAllText("/Users/jamesglasgow/Projects/parser/test.sql");
 
-                    -- Insert data from two different source tables into the temp table
-                    INSERT INTO #StagedSales (SaleID, ProductName, Region, SaleAmount)
-                    SELECT s.NA_SaleID, p.ProductName, 'North America', s.Amount
-                    FROM dbo.NorthAmericaSales s
-                    JOIN dbo.Products p ON s.ProductID = p.ProductID;
+            var parser = new TSql150Parser(true, SqlEngineType.All);
+            var fragment = parser.Parse(new StringReader(sqlScript), out var errors);
 
-                    INSERT INTO #StagedSales (SaleID, ProductName, Region, SaleAmount)
-                    SELECT s.EU_SaleID, p.ProductName, 'Europe', s.Amount
-                    FROM dbo.EuropeSales s
-                    JOIN dbo.Products p ON s.ProductID = p.ProductID;
-
-                    -- Use the staged data to update a final reporting table
-                    MERGE dbo.DailySalesSummary AS T
-                    USING #StagedSales AS S
-                    ON T.ProductName = S.ProductName AND T.Region = S.Region
-                    WHEN MATCHED THEN
-                        UPDATE SET T.TotalSales = T.TotalSales + S.SaleAmount
-                    WHEN NOT MATCHED BY TARGET THEN
-                        INSERT (ProductName, Region, TotalSales)
-                        VALUES (S.ProductName, S.Region, S.SaleAmount);
-                END
-                GO
-            ";
-
-            string[] batches = Regex.Split(sqlScript, @"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
-            var parser = new TSql150Parser(true);
-            var finalResults = new List<ProcedureAnalysis>();
-
-            foreach (var batch in batches)
+            if (errors.Any())
             {
-                if (string.IsNullOrWhiteSpace(batch)) continue;
-                var fragment = parser.Parse(new StringReader(batch), out var errors);
-                if (errors.Any())
-                {
-                    Console.WriteLine($"Parse errors in batch: {string.Join(", ", errors.Select(e => e.Message))}");
-                    continue;
-                }
-                var visitor = new ProcedureVisitor();
-                fragment.Accept(visitor);
-                if (visitor.CurrentAnalysis != null) finalResults.Add(visitor.CurrentAnalysis);
+                Console.WriteLine("Errors parsing script:");
+                foreach (var error in errors) Console.WriteLine($"- {error.Message}");
+                return;
             }
 
-            Console.WriteLine("====== PARSING COMPLETE ======");
-            finalResults.ForEach(r => r.PrintResults());
+            var visitor = new LineageVisitor();
+            fragment.Accept(visitor);
+
+            Console.WriteLine($"DEBUG: Parsing complete, now resolving lineage...");
+            visitor.ResolveAndMergeLineage();
+
+            // Print standard results
+            visitor.Analysis.PrintResults();
+            
+            // Save metadata to file for Python parser
+            string metadataPath = "/Users/jamesglasgow/Projects/parser/csharp_metadata.json";
+            visitor.Analysis.SaveMetadataToFile(metadataPath);
         }
     }
-
-    #endregion
 }

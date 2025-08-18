@@ -1,0 +1,198 @@
+{
+  "procedure_name": "dbo.usp_ProcessDailyCoreBankingSettlement_Monster",
+  "source_tables": [
+    "core.glwork",
+    "core.ledgerwork",
+    "joinmap",
+    "ref.account",
+    "ref.currencyrate",
+    "staging.transactions",
+    "x"
+  ],
+  "target_tables": [
+    "Audit.FailedTxn",
+    "Audit.ReconSummary",
+    "Audit.StepLog",
+    "Core.GL",
+    "Core.GLWork",
+    "Core.Ledger",
+    "Core.LedgerFinal",
+    "Core.LedgerWork",
+    "Ops.BatchRegistry"
+  ],
+  "column_lineages": [
+    {
+      "source_table": "core.glwork",
+      "source_column": "batchid",
+      "target_table": "core.gl",
+      "target_column": "batchid"
+    },
+    {
+      "source_table": "core.glwork",
+      "source_column": "credit",
+      "target_table": "core.gl",
+      "target_column": "credit"
+    },
+    {
+      "source_table": "core.glwork",
+      "source_column": "debit",
+      "target_table": "core.gl",
+      "target_column": "debit"
+    },
+    {
+      "source_table": "core.glwork",
+      "source_column": "glaccount",
+      "target_table": "core.gl",
+      "target_column": "glaccount"
+    },
+    {
+      "source_table": "core.glwork",
+      "source_column": "hashid",
+      "target_table": "core.gl",
+      "target_column": "hashid"
+    },
+    {
+      "source_table": "core.glwork",
+      "source_column": "narrative",
+      "target_table": "core.gl",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "core.glwork",
+      "source_column": "postingdate",
+      "target_table": "core.gl",
+      "target_column": "postingdate"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "accountid",
+      "target_table": "core.ledger",
+      "target_column": "accountid"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "amountbase",
+      "target_table": "core.ledger",
+      "target_column": "amountbase"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "batchid",
+      "target_table": "core.ledger",
+      "target_column": "batchid"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "direction",
+      "target_table": "core.ledger",
+      "target_column": "direction"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "feeamount",
+      "target_table": "core.ledger",
+      "target_column": "feeamount"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "idempotencykey",
+      "target_table": "core.ledger",
+      "target_column": "idempotencykey"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "narrative",
+      "target_table": "core.ledger",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "postingdate",
+      "target_table": "core.ledger",
+      "target_column": "postingdate"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "riskscore",
+      "target_table": "core.ledger",
+      "target_column": "riskscore"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "txntype",
+      "target_table": "core.ledger",
+      "target_column": "txntype"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "accountid",
+      "target_table": "core.ledgerfinal",
+      "target_column": "accountid"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "amountbase",
+      "target_table": "core.ledgerfinal",
+      "target_column": "amountbase"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "batchid",
+      "target_table": "core.ledgerfinal",
+      "target_column": "batchid"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "direction",
+      "target_table": "core.ledgerfinal",
+      "target_column": "direction"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "feeamount",
+      "target_table": "core.ledgerfinal",
+      "target_column": "feeamount"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "idempotencykey",
+      "target_table": "core.ledgerfinal",
+      "target_column": "idempotencykey"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "narrative",
+      "target_table": "core.ledgerfinal",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "postingdate",
+      "target_table": "core.ledgerfinal",
+      "target_column": "postingdate"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "riskscore",
+      "target_table": "core.ledgerfinal",
+      "target_column": "riskscore"
+    },
+    {
+      "source_table": "core.ledgerwork",
+      "source_column": "txntype",
+      "target_table": "core.ledgerfinal",
+      "target_column": "txntype"
+    }
+  ],
+  "merge_patterns": [
+    {
+      "source_table": "temp_table_pattern",
+      "target_table": "Core.LedgerWork",
+      "join_columns": [],
+      "update_columns": [],
+      "insert_columns": []
+    }
+  ],
+  "temp_table_patterns": [],
+  "analysis_timestamp": "2025-08-18T18:47:07Z"
+}

@@ -1,0 +1,82 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v7.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v7.0": {
+      "parser/1.0.0": {
+        "dependencies": {
+          "Microsoft.SqlServer.TransactSql.ScriptDom": "170.82.0"
+        },
+        "runtime": {
+          "parser.dll": {}
+        }
+      },
+      "Microsoft.SqlServer.TransactSql.ScriptDom/170.82.0": {
+        "runtime": {
+          "lib/netstandard2.1/Microsoft.SqlServer.TransactSql.ScriptDom.dll": {
+            "assemblyVersion": "17.0.0.0",
+            "fileVersion": "17.0.82.0"
+          }
+        },
+        "resources": {
+          "lib/netstandard2.1/cs/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/netstandard2.1/de/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "de"
+          },
+          "lib/netstandard2.1/es/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "es"
+          },
+          "lib/netstandard2.1/fr/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/netstandard2.1/it/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "it"
+          },
+          "lib/netstandard2.1/ja/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/netstandard2.1/ko/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/netstandard2.1/pl/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/netstandard2.1/pt-BR/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/netstandard2.1/ru/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/netstandard2.1/tr/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/netstandard2.1/zh-Hans/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/netstandard2.1/zh-Hant/Microsoft.SqlServer.TransactSql.ScriptDom.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "parser/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.SqlServer.TransactSql.ScriptDom/170.82.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-aDmzaZCdrllcpNP9EYih8sLJft0VDfVziNTHSysYT5P3Mt4f5mxZ3gvjV5wRX1j2KAFS1EkIAvPAZX67r6XU6Q==",
+      "path": "microsoft.sqlserver.transactsql.scriptdom/170.82.0",
+      "hashPath": "microsoft.sqlserver.transactsql.scriptdom.170.82.0.nupkg.sha512"
+    }
+  }
+}

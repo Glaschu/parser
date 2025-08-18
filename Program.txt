@@ -1,0 +1,86 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq; // for Select
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
+class ColumnLineageExtractor : TSqlFragmentVisitor
+{
+    public List<(string target, string source)> Lineages { get; } = new();
+
+    public override void Visit(InsertStatement node)
+    {
+        if (node.InsertSpecification.InsertSource is SelectInsertSource insertSource)
+        {
+            if (insertSource.Select is QuerySpecification qs)
+            {
+                var targetCols = node.InsertSpecification.Columns;
+                var selectCols = qs.SelectElements;
+
+                for (int i = 0; i < targetCols.Count && i < selectCols.Count; i++)
+                {
+                    string targetCol = targetCols[i].MultiPartIdentifier.Identifiers[0].Value;
+                    string sourceCol = ExtractColumnName(selectCols[i]);
+
+                    Lineages.Add((targetCol, sourceCol));
+                }
+            }
+        }
+    }
+
+    private string ExtractColumnName(SelectElement sel)
+    {
+        if (sel is SelectScalarExpression sse)
+        {
+            if (sse.Expression is ColumnReferenceExpression colRef)
+            {
+                return string.Join(".", colRef.MultiPartIdentifier.Identifiers
+                                   .Select(id => id.Value));
+            }
+            else if (sse.ColumnName != null)
+            {
+                // handle alias: SELECT col AS alias
+                return sse.ColumnName.Value;
+            }
+            else
+            {
+                return sse.Expression?.ToString() ?? string.Empty;
+            }
+        }
+        return sel.ToString();
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        string sql = @"
+            INSERT INTO OrdersArchive (OrderID, CustomerName, TotalAmount)
+            SELECT o.OrderID, c.Name, o.Amount
+            FROM Orders o
+            JOIN Customers c ON o.CustomerID = c.CustomerID;
+        ";
+
+        var parser = new TSql160Parser(true);
+        IList<ParseError> errors;
+        using var sr = new StringReader(sql);
+        var fragment = parser.Parse(sr, out errors);
+
+        if (errors.Count > 0)
+        {
+            Console.WriteLine("Parse errors:");
+            foreach (var e in errors) Console.WriteLine(e.Message);
+            return;
+        }
+
+        var visitor = new ColumnLineageExtractor();
+        fragment.Accept(visitor);
+
+        Console.WriteLine("Column Lineages:");
+        foreach (var lineage in visitor.Lineages)
+        {
+            Console.WriteLine($"{lineage.target} <- {lineage.source}");
+        }
+    }
+}
