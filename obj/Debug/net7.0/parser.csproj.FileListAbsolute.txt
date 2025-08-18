@@ -1,0 +1,5 @@
+/Users/jamesglasgow/Projects/parser/obj/Debug/net7.0/parser.csproj.AssemblyReference.cache
+/Users/jamesglasgow/Projects/parser/obj/Debug/net7.0/parser.GeneratedMSBuildEditorConfig.editorconfig
+/Users/jamesglasgow/Projects/parser/obj/Debug/net7.0/parser.AssemblyInfoInputs.cache
+/Users/jamesglasgow/Projects/parser/obj/Debug/net7.0/parser.AssemblyInfo.cs
+/Users/jamesglasgow/Projects/parser/obj/Debug/net7.0/parser.csproj.CoreCompileInputs.cache
