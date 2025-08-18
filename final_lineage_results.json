@@ -1,0 +1,91 @@
+{
+  "end_to_end_mappings": [
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txnexternalid",
+      "target_table": "audit.failedtxn",
+      "target_column": "txnexternalid",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txnexternalid",
+      "target_table": "core.ledgerfinal",
+      "target_column": "idempotencykey",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "accountno",
+      "target_table": "core.ledgerfinal",
+      "target_column": "accountid",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "amount",
+      "target_table": "core.ledgerfinal",
+      "target_column": "amountbase",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "currency",
+      "target_table": "core.ledgerfinal",
+      "target_column": "amountbase",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "direction",
+      "target_table": "core.ledgerfinal",
+      "target_column": "direction",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txntype",
+      "target_table": "core.ledgerfinal",
+      "target_column": "txntype",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "ref.account",
+      "source_column": "accountid",
+      "target_table": "core.ledgerfinal",
+      "target_column": "accountid",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "ref.feeconfig",
+      "source_column": "feeamount",
+      "target_table": "core.ledgerfinal",
+      "target_column": "feeamount",
+      "transformation_type": "key_business_logic"
+    },
+    {
+      "source_table": "ref.currencyrate",
+      "source_column": "rate",
+      "target_table": "core.ledgerfinal",
+      "target_column": "amountbase",
+      "transformation_type": "key_business_logic"
+    }
+  ],
+  "source_tables": [
+    "ref.account",
+    "ref.product",
+    "staging.transactions",
+    "ref.feeconfig",
+    "ref.glmap",
+    "ref.currencyrate"
+  ],
+  "target_tables": [
+    "core.ledgerfinal",
+    "audit.steplog",
+    "core.gl",
+    "audit.reconsummary",
+    "ops.batchregistry",
+    "audit.failedtxn"
+  ],
+  "mapping_count": 10
+}

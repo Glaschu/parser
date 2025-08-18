@@ -1,0 +1,126 @@
+{
+  "staging.transactions": {
+    "txnexternalid": "VARCHAR",
+    "accountno": "VARCHAR", 
+    "amount": "DECIMAL",
+    "currency": "VARCHAR",
+    "direction": "VARCHAR",
+    "txntype": "VARCHAR",
+    "createdat": "TIMESTAMP"
+  },
+  "ref.account": {
+    "accountid": "INT",
+    "accountno": "VARCHAR",
+    "productcode": "VARCHAR",
+    "balance": "DECIMAL",
+    "status": "VARCHAR"
+  },
+  "ref.currencyrate": {
+    "currency": "VARCHAR",
+    "rate": "DECIMAL",
+    "effectivedate": "DATE"
+  },
+  "ref.glmap": {
+    "productcode": "VARCHAR",
+    "txntype": "VARCHAR",
+    "gl_debit": "VARCHAR",
+    "gl_credit": "VARCHAR"
+  },
+  "ref.feeconfig": {
+    "txntype": "VARCHAR",
+    "feeamount": "DECIMAL",
+    "feetype": "VARCHAR"
+  },
+  "ref.product": {
+    "productcode": "VARCHAR",
+    "productname": "VARCHAR",
+    "category": "VARCHAR"
+  },
+  "core.balances": {
+    "accountid": "INT",
+    "balance": "DECIMAL",
+    "currency": "VARCHAR",
+    "lastupdated": "TIMESTAMP"
+  },
+  "core.ledgerwork": {
+    "idempotencykey": "VARCHAR",
+    "accountid": "INT",
+    "postingdate": "DATE",
+    "amountbase": "DECIMAL",
+    "direction": "VARCHAR",
+    "txntype": "VARCHAR",
+    "feeamount": "DECIMAL",
+    "riskscore": "INT",
+    "narrative": "TEXT",
+    "batchid": "VARCHAR",
+    "createdat": "TIMESTAMP"
+  },
+  "core.glwork": {
+    "hashid": "VARCHAR",
+    "glaccount": "VARCHAR",
+    "debit": "DECIMAL",
+    "credit": "DECIMAL",
+    "postingdate": "DATE",
+    "narrative": "TEXT",
+    "batchid": "VARCHAR"
+  },
+  "core.ledger": {
+    "idempotencykey": "VARCHAR",
+    "accountid": "INT",
+    "postingdate": "DATE",
+    "amountbase": "DECIMAL",
+    "direction": "VARCHAR",
+    "txntype": "VARCHAR",
+    "feeamount": "DECIMAL",
+    "riskscore": "INT",
+    "narrative": "TEXT",
+    "batchid": "VARCHAR",
+    "createdat": "TIMESTAMP"
+  },
+  "core.ledgerfinal": {
+    "idempotencykey": "VARCHAR",
+    "accountid": "INT",
+    "postingdate": "DATE",
+    "amountbase": "DECIMAL",
+    "direction": "VARCHAR",
+    "txntype": "VARCHAR",
+    "feeamount": "DECIMAL",
+    "riskscore": "INT",
+    "narrative": "TEXT",
+    "batchid": "VARCHAR",
+    "createdat": "TIMESTAMP"
+  },
+  "core.gl": {
+    "hashid": "VARCHAR",
+    "glaccount": "VARCHAR",
+    "debit": "DECIMAL",
+    "credit": "DECIMAL",
+    "postingdate": "DATE",
+    "narrative": "TEXT",
+    "batchid": "VARCHAR",
+    "createdat": "TIMESTAMP"
+  },
+  "audit.failedtxn": {
+    "txnexternalid": "VARCHAR",
+    "reason": "TEXT",
+    "batchid": "VARCHAR",
+    "createdat": "TIMESTAMP"
+  },
+  "audit.steplog": {
+    "stepname": "VARCHAR",
+    "status": "VARCHAR",
+    "message": "TEXT",
+    "createdat": "TIMESTAMP"
+  },
+  "audit.reconsummary": {
+    "batchid": "VARCHAR",
+    "totalrecords": "INT",
+    "totalamount": "DECIMAL",
+    "createdat": "TIMESTAMP"
+  },
+  "ops.batchregistry": {
+    "batchid": "VARCHAR",
+    "status": "VARCHAR",
+    "createdat": "TIMESTAMP"
+  }
+}

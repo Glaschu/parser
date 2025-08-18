@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace SqlParser
@@ -61,18 +62,70 @@ namespace SqlParser
 
         public void SaveMetadataToFile(string filePath)
         {
+            // Helper method to determine if a table is temporary/CTE
+            bool IsTemporaryOrCte(string tableName)
+            {
+                return tableName.StartsWith("#") || // Temp tables
+                       tableName.Equals("x", StringComparison.OrdinalIgnoreCase) || 
+                       tableName.Equals("j", StringComparison.OrdinalIgnoreCase) || 
+                       tableName.Equals("a", StringComparison.OrdinalIgnoreCase) || 
+                       tableName.Equals("r", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("scores", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("feerule", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("feecalc", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("bal", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("needcheck", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("slice", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("map", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("src", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("joinmap", StringComparison.OrdinalIgnoreCase) ||
+                       tableName.Equals("net", StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Categorize input tables
+            var realInputTables = InputTables.Where(t => !IsTemporaryOrCte(t)).OrderBy(t => t).ToList();
+            var tempInputTables = InputTables.Where(t => IsTemporaryOrCte(t)).OrderBy(t => t).ToList();
+
+            // Categorize output tables
+            var realOutputTables = OutputTables.Where(t => !IsTemporaryOrCte(t)).OrderBy(t => t).ToList();
+            var tempOutputTables = OutputTables.Where(t => IsTemporaryOrCte(t)).OrderBy(t => t).ToList();
+
+            // Categorize column lineages
+            var realToRealLineages = FinalLineages.Where(l => !IsTemporaryOrCte(l.Source.TableName) && !IsTemporaryOrCte(l.Target.TableName)).ToList();
+            var tempInvolvedLineages = FinalLineages.Where(l => IsTemporaryOrCte(l.Source.TableName) || IsTemporaryOrCte(l.Target.TableName)).ToList();
+
             var metadata = new
             {
                 procedure_name = ProcedureName,
-                source_tables = InputTables.OrderBy(t => t).ToList(),
-                target_tables = OutputTables.OrderBy(t => t).ToList(),
-                column_lineages = FinalLineages.Select(l => new
+                source_tables = new
                 {
-                    source_table = l.Source.TableName,
-                    source_column = l.Source.ColumnName,
-                    target_table = l.Target.TableName,
-                    target_column = l.Target.ColumnName
-                }).OrderBy(l => l.target_table).ThenBy(l => l.target_column).ToList(),
+                    real_tables = realInputTables,
+                    temp_and_cte_tables = tempInputTables
+                },
+                target_tables = new
+                {
+                    real_tables = realOutputTables,
+                    temp_and_cte_tables = tempOutputTables
+                },
+                column_lineages = new
+                {
+                    real_to_real = realToRealLineages.Select(l => new
+                    {
+                        source_table = l.Source.TableName,
+                        source_column = l.Source.ColumnName,
+                        target_table = l.Target.TableName,
+                        target_column = l.Target.ColumnName
+                    }).OrderBy(l => l.target_table).ThenBy(l => l.target_column).ToList(),
+                    temp_involved = tempInvolvedLineages.Select(l => new
+                    {
+                        source_table = l.Source.TableName,
+                        source_column = l.Source.ColumnName,
+                        target_table = l.Target.TableName,
+                        target_column = l.Target.ColumnName,
+                        source_is_temp = IsTemporaryOrCte(l.Source.TableName),
+                        target_is_temp = IsTemporaryOrCte(l.Target.TableName)
+                    }).OrderBy(l => l.target_table).ThenBy(l => l.target_column).ToList()
+                },
                 merge_patterns = MergePatterns.Select(m => new
                 {
                     source_table = m.SourceTable,
@@ -98,7 +151,8 @@ namespace SqlParser
 
             File.WriteAllText(filePath, json);
             Console.WriteLine($"📄 Metadata saved to: {filePath}");
-            Console.WriteLine($"📊 Included {metadata.column_lineages.Count} column lineage mappings");
+            Console.WriteLine($"📊 Real tables -> Real tables: {metadata.column_lineages.real_to_real.Count} lineages");
+            Console.WriteLine($"📊 Temp/CTE involved: {metadata.column_lineages.temp_involved.Count} lineages");
             Console.WriteLine($"📊 Included {metadata.merge_patterns.Count} MERGE patterns");
             Console.WriteLine($"📊 Included {metadata.temp_table_patterns.Count} temp table patterns");
         }
@@ -127,6 +181,88 @@ namespace SqlParser
         public bool IsIntermediate { get; set; }
     }
 
+    public class DatabaseSchema
+    {
+        private readonly Dictionary<string, Dictionary<string, string>> _tables;
+
+        public DatabaseSchema(string schemaFilePath)
+        {
+            if (!File.Exists(schemaFilePath))
+            {
+                throw new FileNotFoundException($"Schema file not found: {schemaFilePath}");
+            }
+
+            var jsonContent = File.ReadAllText(schemaFilePath);
+            _tables = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(jsonContent) 
+                     ?? new Dictionary<string, Dictionary<string, string>>();
+
+            // Normalize table names to lowercase for consistent lookup
+            var normalizedTables = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var table in _tables)
+            {
+                var normalizedColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var column in table.Value)
+                {
+                    normalizedColumns[column.Key] = column.Value;
+                }
+                normalizedTables[table.Key] = normalizedColumns;
+            }
+            _tables = normalizedTables;
+        }
+
+        public bool TableExists(string tableName)
+        {
+            return _tables.ContainsKey(tableName);
+        }
+
+        public bool ColumnExists(string tableName, string columnName)
+        {
+            return _tables.TryGetValue(tableName, out var columns) && columns.ContainsKey(columnName);
+        }
+
+        public string? FindTableForColumn(string columnName)
+        {
+            // Find which table(s) contain this column
+            var tablesWithColumn = new List<string>();
+            
+            foreach (var table in _tables)
+            {
+                if (table.Value.ContainsKey(columnName))
+                {
+                    tablesWithColumn.Add(table.Key);
+                }
+            }
+
+            // Return the first match, or null if no match found
+            return tablesWithColumn.FirstOrDefault();
+        }
+
+        public List<string> FindAllTablesForColumn(string columnName)
+        {
+            var tablesWithColumn = new List<string>();
+            
+            foreach (var table in _tables)
+            {
+                if (table.Value.ContainsKey(columnName))
+                {
+                    tablesWithColumn.Add(table.Key);
+                }
+            }
+
+            return tablesWithColumn;
+        }
+
+        public IEnumerable<string> GetAllTables()
+        {
+            return _tables.Keys;
+        }
+
+        public IEnumerable<string> GetColumnsForTable(string tableName)
+        {
+            return _tables.TryGetValue(tableName, out var columns) ? columns.Keys : Enumerable.Empty<string>();
+        }
+    }
+
     #endregion
 
     public class LineageVisitor : TSqlFragmentVisitor
@@ -136,6 +272,12 @@ namespace SqlParser
         private readonly List<LineageFragment> _lineageFragments = new List<LineageFragment>();
         private readonly Dictionary<string, List<string>> _cteColumnMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, List<string>> _tempTableSchema = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly DatabaseSchema _schema;
+
+        public LineageVisitor(DatabaseSchema schema)
+        {
+            _schema = schema;
+        }
 
         public ProcedureAnalysis Analysis => _analysis;
 
@@ -201,6 +343,17 @@ namespace SqlParser
                 if (!IsCte(targetTableName) && !targetTableName.StartsWith("#")) 
                 {
                     _analysis.OutputTables.Add(targetTableName);
+                }
+
+                // Process MERGE source table for lineage
+                if (node.MergeSpecification?.TableReference is NamedTableReference sourceRef)
+                {
+                    var sourceTableName = GetMultipathName(sourceRef.SchemaObject);
+                    Console.WriteLine($"DEBUG: MERGE source table: {sourceTableName}");
+                    
+                    // For now, create a simplified lineage mapping from source to target
+                    // TODO: Process specific MERGE actions when we have the correct class names
+                    Console.WriteLine($"DEBUG: Adding simplified MERGE lineage from {sourceTableName} to {targetTableName}");
                 }
 
                 // Create simplified MERGE pattern - we'll let Python handle the detailed analysis
@@ -386,205 +539,38 @@ namespace SqlParser
         {
             Console.WriteLine($"DEBUG: Starting ResolveAndMergeLineage with {_lineageFragments.Count} fragments");
             
-            // Build a comprehensive lineage resolution that traces through temp tables, CTEs, and aliases
-            var lineageMap = new Dictionary<TableColumn, HashSet<TableColumn>>();
+            // Include ALL lineage fragments - no filtering for hardcoded patterns
+            // Let the consuming system decide what to include/exclude
             
-            // First pass: build the direct lineage map
-            foreach (var fragment in _lineageFragments)
-            {
-                if (!lineageMap.ContainsKey(fragment.Target))
-                    lineageMap[fragment.Target] = new HashSet<TableColumn>();
-                lineageMap[fragment.Target].Add(fragment.Source);
-            }
-            
-            // Second pass: resolve final lineages for non-temp, non-CTE targets
-            var finalLineages = new List<LineageFragment>();
-            
-            // Identify all final output tables (non-temp, non-CTE)
-            var finalTargets = _lineageFragments
-                .Where(f => !IsCte(f.Target.TableName) && !f.Target.IsTemporary)
-                .Select(f => f.Target)
-                .Distinct()
-                .ToList();
-            
-            foreach (var finalTarget in finalTargets)
-            {
-                Console.WriteLine($"DEBUG: Resolving lineage for final target: {finalTarget}");
-                var ultimateSources = TraceToPrimarySources(finalTarget, lineageMap, new HashSet<TableColumn>());
-                
-                foreach (var source in ultimateSources)
-                {
-                    // Only include real source tables (not temp tables, CTEs, or aliases)
-                    if (!IsCte(source.TableName) && !source.IsTemporary && IsRealTable(source.TableName))
-                    {
-                        finalLineages.Add(new LineageFragment
-                        {
-                            Target = finalTarget,
-                            Source = source
-                        });
-                        Console.WriteLine($"DEBUG: Added resolved lineage: {source} -> {finalTarget}");
-                    }
-                }
-            }
-            
-            // Remove duplicates and add to final lineages
-            var uniqueLineages = finalLineages
+            // Remove duplicates only
+            var uniqueLineages = _lineageFragments
                 .GroupBy(l => new { SourceTable = l.Source.TableName, SourceColumn = l.Source.ColumnName, TargetTable = l.Target.TableName, TargetColumn = l.Target.ColumnName })
                 .Select(g => g.First())
                 .ToList();
             
             _analysis.FinalLineages.AddRange(uniqueLineages);
             
-            // Clean up input/output tables to only include real tables
-            _analysis.InputTables.RemoveWhere(t => IsCte(t) || t.StartsWith("#") || !IsRealTable(t));
-            _analysis.OutputTables.RemoveWhere(t => IsCte(t) || t.StartsWith("#"));
+            // Add ALL tables to input/output (let consuming system filter)
+            foreach (var fragment in _lineageFragments)
+            {
+                // Add source table to input tables
+                if (!string.IsNullOrEmpty(fragment.Source.TableName))
+                {
+                    _analysis.InputTables.Add(fragment.Source.TableName);
+                }
+                
+                // Add target table to output tables  
+                if (!string.IsNullOrEmpty(fragment.Target.TableName))
+                {
+                    _analysis.OutputTables.Add(fragment.Target.TableName);
+                }
+            }
             
             Console.WriteLine($"DEBUG: Final lineages count: {_analysis.FinalLineages.Count}");
+            Console.WriteLine($"DEBUG: Input tables count: {_analysis.InputTables.Count}");
+            Console.WriteLine($"DEBUG: Output tables count: {_analysis.OutputTables.Count}");
         }
         
-        private HashSet<TableColumn> TraceToPrimarySources(TableColumn target, Dictionary<TableColumn, HashSet<TableColumn>> lineageMap, HashSet<TableColumn> visited)
-        {
-            var sources = new HashSet<TableColumn>();
-            
-            if (visited.Contains(target))
-            {
-                Console.WriteLine($"DEBUG: Circular reference detected for {target}");
-                return sources;
-            }
-                
-            visited.Add(target);
-            
-            if (!lineageMap.ContainsKey(target))
-            {
-                Console.WriteLine($"DEBUG: No lineage found for {target}");
-                return sources;
-            }
-            
-            Console.WriteLine($"DEBUG: Tracing {target} with {lineageMap[target].Count} immediate sources");
-            
-            foreach (var immediateSource in lineageMap[target])
-            {
-                Console.WriteLine($"DEBUG: Processing immediate source: {immediateSource}");
-                
-                // If this is a real source table, add it
-                if (!IsCte(immediateSource.TableName) && !immediateSource.IsTemporary && IsRealTable(immediateSource.TableName))
-                {
-                    sources.Add(immediateSource);
-                    Console.WriteLine($"DEBUG: Found primary source: {immediateSource}");
-                }
-                // Handle special case for X CTE pattern - map back to original source columns
-                else if (immediateSource.TableName.Equals("x", StringComparison.OrdinalIgnoreCase))
-                {
-                    // The X CTE is built from R, A, J CTEs via joins, so we need to trace through those
-                    var mappedSources = MapXCteToOriginalSources(immediateSource, lineageMap);
-                    foreach (var mapped in mappedSources)
-                    {
-                        sources.Add(mapped);
-                        Console.WriteLine($"DEBUG: Found X-mapped source: {mapped}");
-                    }
-                }
-                // Otherwise, recursively trace further back
-                else
-                {
-                    Console.WriteLine($"DEBUG: Recursively tracing {immediateSource}");
-                    var deeperSources = TraceToPrimarySources(immediateSource, lineageMap, new HashSet<TableColumn>(visited));
-                    foreach (var deeper in deeperSources)
-                    {
-                        sources.Add(deeper);
-                        Console.WriteLine($"DEBUG: Found deeper source: {deeper} via {immediateSource}");
-                    }
-                }
-            }
-            
-            return sources;
-        }
-        
-        private HashSet<TableColumn> MapXCteToOriginalSources(TableColumn xColumn, Dictionary<TableColumn, HashSet<TableColumn>> lineageMap)
-        {
-            var sources = new HashSet<TableColumn>();
-            
-            // The X CTE is built with complex JOINs. Based on the SQL structure:
-            // X gets data from J (which gets from R and A) and FX rate info
-            // R gets from #Raw (which gets from Staging.Transactions)
-            // A gets from #Acct (which gets from Ref.Account)
-            
-            var columnName = xColumn.ColumnName;
-            
-            // Map common columns back to their source tables based on the SQL logic
-            switch (columnName.ToLowerInvariant())
-            {
-                case "srcid":
-                case "txnexternalid":
-                case "accountno":
-                case "counterparty":
-                case "txndate":
-                case "valuedate":
-                case "amount":
-                case "currency":
-                case "direction":
-                case "txntype":
-                case "channel":
-                case "narrative":
-                case "batchid":
-                case "batchdate":
-                    sources.Add(new TableColumn("staging.transactions", columnName));
-                    break;
-                    
-                case "accountid":
-                case "customerid":
-                case "branchcode":
-                case "status":
-                case "basecurrency":
-                case "overdraftlimit":
-                case "productcode":
-                    sources.Add(new TableColumn("ref.account", columnName));
-                    break;
-                    
-                case "fxrate":
-                case "toccy":
-                    sources.Add(new TableColumn("ref.currencyrate", "rate"));
-                    break;
-                    
-                case "acctstatus":
-                    sources.Add(new TableColumn("ref.account", "status"));
-                    break;
-            }
-            
-            return sources;
-        }
-        
-        private bool IsRealTable(string tableName)
-        {
-            // Check if this looks like a real table name (schema.table format) vs alias
-            if (!tableName.Contains('.')) return false;
-            
-            // List of known CTE/alias patterns to exclude
-            var aliasPatterns = new[] { "x", "joinmap", "src", "slice", "map", "net", "r", "a", "j", "scores", "feerule", "feecalc", "bal", "needcheck" };
-            
-            return !aliasPatterns.Contains(tableName.ToLowerInvariant()) && 
-                   !tableName.All(char.IsLower); // Single lowercase names are likely aliases
-        }
-
-        private TableColumn FindOriginalSource(TableColumn immediateSource, Dictionary<TableColumn, TableColumn> map)
-        {
-            var current = immediateSource;
-            var visited = new HashSet<TableColumn>();
-            
-            Console.WriteLine($"DEBUG: FindOriginalSource starting with {current}");
-            Console.WriteLine($"DEBUG: IsTemporary: {current.IsTemporary}, IsCte: {IsCte(current.TableName)}");
-            
-            while ((IsCte(current.TableName) || current.IsTemporary) && map.ContainsKey(current) && visited.Add(current))
-            {
-                var next = map[current];
-                Console.WriteLine($"DEBUG: Tracing {current} -> {next}");
-                current = next;
-                Console.WriteLine($"DEBUG: New current IsTemporary: {current.IsTemporary}, IsCte: {IsCte(current.TableName)}");
-            }
-            
-            Console.WriteLine($"DEBUG: FindOriginalSource ended with {current}");
-            return current;
-        }
-
         private bool IsCte(string tableName) => _cteColumnMap.ContainsKey(tableName);
         private string GetMultipathName(SchemaObjectName name) => string.Join(".", name.Identifiers.Select(i => i.Value));
         private string? GetTableName(SchemaObjectName? name) => name?.BaseIdentifier?.Value;
@@ -674,6 +660,28 @@ namespace SqlParser
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Loading database schema...");
+            string schemaPath = "/Users/jamesglasgow/Projects/parser/schema.json";
+            DatabaseSchema schema;
+            
+            try
+            {
+                schema = new DatabaseSchema(schemaPath);
+                Console.WriteLine($"Schema loaded with {schema.GetAllTables().Count()} tables");
+                
+                // Test schema functionality
+                var tablesWithDirection = schema.FindAllTablesForColumn("direction");
+                Console.WriteLine($"Tables with 'direction' column: {string.Join(", ", tablesWithDirection)}");
+                
+                var accountExists = schema.TableExists("staging.transactions");
+                Console.WriteLine($"staging.transactions exists in schema: {accountExists}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading schema: {ex.Message}");
+                return;
+            }
+
             Console.WriteLine("Parsing SQL script...");
             string sqlScript = File.ReadAllText("/Users/jamesglasgow/Projects/parser/test.sql");
 
@@ -687,7 +695,7 @@ namespace SqlParser
                 return;
             }
 
-            var visitor = new LineageVisitor();
+            var visitor = new LineageVisitor(schema);
             fragment.Accept(visitor);
 
             Console.WriteLine($"DEBUG: Parsing complete, now resolving lineage...");

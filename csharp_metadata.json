@@ -1,323 +1,1292 @@
 {
   "procedure_name": "dbo.usp_ProcessDailyCoreBankingSettlement_Monster",
-  "source_tables": [
-    "core.balances",
-    "core.glwork",
-    "core.ledgerwork",
-    "ref.account",
-    "ref.currencyrate",
-    "ref.feeconfig",
-    "ref.glmap",
-    "ref.product",
-    "staging.transactions"
-  ],
-  "target_tables": [
-    "Audit.FailedTxn",
-    "Audit.ReconSummary",
-    "Audit.StepLog",
-    "Core.GL",
-    "Core.GLWork",
-    "Core.Ledger",
-    "Core.LedgerFinal",
-    "Core.LedgerWork",
-    "Ops.BatchRegistry"
-  ],
-  "column_lineages": [
-    {
-      "source_table": "staging.transactions",
-      "source_column": "txnexternalid",
-      "target_table": "audit.failedtxn",
-      "target_column": "txnexternalid"
-    },
-    {
-      "source_table": "core.glwork",
-      "source_column": "batchid",
-      "target_table": "core.gl",
-      "target_column": "batchid"
-    },
-    {
-      "source_table": "core.glwork",
-      "source_column": "credit",
-      "target_table": "core.gl",
-      "target_column": "credit"
-    },
-    {
-      "source_table": "core.glwork",
-      "source_column": "debit",
-      "target_table": "core.gl",
-      "target_column": "debit"
-    },
-    {
-      "source_table": "core.glwork",
-      "source_column": "glaccount",
-      "target_table": "core.gl",
-      "target_column": "glaccount"
-    },
-    {
-      "source_table": "core.glwork",
-      "source_column": "hashid",
-      "target_table": "core.gl",
-      "target_column": "hashid"
-    },
-    {
-      "source_table": "core.glwork",
-      "source_column": "narrative",
-      "target_table": "core.gl",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "core.glwork",
-      "source_column": "postingdate",
-      "target_table": "core.gl",
-      "target_column": "postingdate"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "direction",
-      "target_table": "core.glwork",
-      "target_column": "credit"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "amount",
-      "target_table": "core.glwork",
-      "target_column": "credit"
-    },
-    {
-      "source_table": "ref.currencyrate",
-      "source_column": "rate",
-      "target_table": "core.glwork",
-      "target_column": "credit"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "direction",
-      "target_table": "core.glwork",
-      "target_column": "debit"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "amount",
-      "target_table": "core.glwork",
-      "target_column": "debit"
-    },
-    {
-      "source_table": "ref.currencyrate",
-      "source_column": "rate",
-      "target_table": "core.glwork",
-      "target_column": "debit"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "direction",
-      "target_table": "core.glwork",
-      "target_column": "glaccount"
-    },
-    {
-      "source_table": "ref.glmap",
-      "source_column": "gl_debit",
-      "target_table": "core.glwork",
-      "target_column": "glaccount"
-    },
-    {
-      "source_table": "ref.glmap",
-      "source_column": "gl_credit",
-      "target_table": "core.glwork",
-      "target_column": "glaccount"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "txnexternalid",
-      "target_table": "core.glwork",
-      "target_column": "hashid"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "accountno",
-      "target_table": "core.glwork",
-      "target_column": "hashid"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "amount",
-      "target_table": "core.glwork",
-      "target_column": "hashid"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "currency",
-      "target_table": "core.glwork",
-      "target_column": "hashid"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "direction",
-      "target_table": "core.glwork",
-      "target_column": "hashid"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "txntype",
-      "target_table": "core.glwork",
-      "target_column": "hashid"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "txnexternalid",
-      "target_table": "core.glwork",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "accountno",
-      "target_table": "core.glwork",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "amount",
-      "target_table": "core.glwork",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "currency",
-      "target_table": "core.glwork",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "direction",
-      "target_table": "core.glwork",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "staging.transactions",
-      "source_column": "txntype",
-      "target_table": "core.glwork",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "accountid",
-      "target_table": "core.ledger",
-      "target_column": "accountid"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "amountbase",
-      "target_table": "core.ledger",
-      "target_column": "amountbase"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "batchid",
-      "target_table": "core.ledger",
-      "target_column": "batchid"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "direction",
-      "target_table": "core.ledger",
-      "target_column": "direction"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "feeamount",
-      "target_table": "core.ledger",
-      "target_column": "feeamount"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "idempotencykey",
-      "target_table": "core.ledger",
-      "target_column": "idempotencykey"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "narrative",
-      "target_table": "core.ledger",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "postingdate",
-      "target_table": "core.ledger",
-      "target_column": "postingdate"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "riskscore",
-      "target_table": "core.ledger",
-      "target_column": "riskscore"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "txntype",
-      "target_table": "core.ledger",
-      "target_column": "txntype"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "accountid",
-      "target_table": "core.ledgerfinal",
-      "target_column": "accountid"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "amountbase",
-      "target_table": "core.ledgerfinal",
-      "target_column": "amountbase"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "batchid",
-      "target_table": "core.ledgerfinal",
-      "target_column": "batchid"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "direction",
-      "target_table": "core.ledgerfinal",
-      "target_column": "direction"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "feeamount",
-      "target_table": "core.ledgerfinal",
-      "target_column": "feeamount"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "idempotencykey",
-      "target_table": "core.ledgerfinal",
-      "target_column": "idempotencykey"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "narrative",
-      "target_table": "core.ledgerfinal",
-      "target_column": "narrative"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "postingdate",
-      "target_table": "core.ledgerfinal",
-      "target_column": "postingdate"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "riskscore",
-      "target_table": "core.ledgerfinal",
-      "target_column": "riskscore"
-    },
-    {
-      "source_table": "core.ledgerwork",
-      "source_column": "txntype",
-      "target_table": "core.ledgerfinal",
-      "target_column": "txntype"
-    }
-  ],
+  "source_tables": {
+    "real_tables": [
+      "core.balances",
+      "core.glwork",
+      "core.ledgerwork",
+      "ref.account",
+      "ref.currencyrate",
+      "ref.feeconfig",
+      "ref.glmap",
+      "ref.product",
+      "staging.transactions"
+    ],
+    "temp_and_cte_tables": [
+      "#acct",
+      "#fx",
+      "#gl",
+      "#invalid",
+      "#post",
+      "#stage",
+      "#valid",
+      "a",
+      "feerule",
+      "joinmap",
+      "map",
+      "slice",
+      "src",
+      "x"
+    ]
+  },
+  "target_tables": {
+    "real_tables": [
+      "Audit.FailedTxn",
+      "Audit.ReconSummary",
+      "Audit.StepLog",
+      "Core.GL",
+      "Core.GLWork",
+      "Core.Ledger",
+      "Core.LedgerFinal",
+      "Core.LedgerWork",
+      "Ops.BatchRegistry"
+    ],
+    "temp_and_cte_tables": [
+      "#acct",
+      "#fx",
+      "#gl",
+      "#invalid",
+      "#post",
+      "#raw",
+      "#stage",
+      "#valid",
+      "bal",
+      "feecalc",
+      "feerule",
+      "j",
+      "joinmap",
+      "map",
+      "needcheck",
+      "scores",
+      "slice",
+      "src",
+      "x"
+    ]
+  },
+  "column_lineages": {
+    "real_to_real": [
+      {
+        "source_table": "core.glwork",
+        "source_column": "batchid",
+        "target_table": "core.gl",
+        "target_column": "batchid"
+      },
+      {
+        "source_table": "core.glwork",
+        "source_column": "credit",
+        "target_table": "core.gl",
+        "target_column": "credit"
+      },
+      {
+        "source_table": "core.glwork",
+        "source_column": "debit",
+        "target_table": "core.gl",
+        "target_column": "debit"
+      },
+      {
+        "source_table": "core.glwork",
+        "source_column": "glaccount",
+        "target_table": "core.gl",
+        "target_column": "glaccount"
+      },
+      {
+        "source_table": "core.glwork",
+        "source_column": "hashid",
+        "target_table": "core.gl",
+        "target_column": "hashid"
+      },
+      {
+        "source_table": "core.glwork",
+        "source_column": "narrative",
+        "target_table": "core.gl",
+        "target_column": "narrative"
+      },
+      {
+        "source_table": "core.glwork",
+        "source_column": "postingdate",
+        "target_table": "core.gl",
+        "target_column": "postingdate"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "accountid",
+        "target_table": "core.ledger",
+        "target_column": "accountid"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "amountbase",
+        "target_table": "core.ledger",
+        "target_column": "amountbase"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "batchid",
+        "target_table": "core.ledger",
+        "target_column": "batchid"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "direction",
+        "target_table": "core.ledger",
+        "target_column": "direction"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "feeamount",
+        "target_table": "core.ledger",
+        "target_column": "feeamount"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "idempotencykey",
+        "target_table": "core.ledger",
+        "target_column": "idempotencykey"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "narrative",
+        "target_table": "core.ledger",
+        "target_column": "narrative"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "postingdate",
+        "target_table": "core.ledger",
+        "target_column": "postingdate"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "riskscore",
+        "target_table": "core.ledger",
+        "target_column": "riskscore"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "txntype",
+        "target_table": "core.ledger",
+        "target_column": "txntype"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "accountid",
+        "target_table": "core.ledgerfinal",
+        "target_column": "accountid"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "amountbase",
+        "target_table": "core.ledgerfinal",
+        "target_column": "amountbase"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "batchid",
+        "target_table": "core.ledgerfinal",
+        "target_column": "batchid"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "direction",
+        "target_table": "core.ledgerfinal",
+        "target_column": "direction"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "feeamount",
+        "target_table": "core.ledgerfinal",
+        "target_column": "feeamount"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "idempotencykey",
+        "target_table": "core.ledgerfinal",
+        "target_column": "idempotencykey"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "narrative",
+        "target_table": "core.ledgerfinal",
+        "target_column": "narrative"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "postingdate",
+        "target_table": "core.ledgerfinal",
+        "target_column": "postingdate"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "riskscore",
+        "target_table": "core.ledgerfinal",
+        "target_column": "riskscore"
+      },
+      {
+        "source_table": "core.ledgerwork",
+        "source_column": "txntype",
+        "target_table": "core.ledgerfinal",
+        "target_column": "txntype"
+      }
+    ],
+    "temp_involved": [
+      {
+        "source_table": "ref.account",
+        "source_column": "accountid",
+        "target_table": "#acct",
+        "target_column": "accountid",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.account",
+        "source_column": "accountno",
+        "target_table": "#acct",
+        "target_column": "accountno",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.account",
+        "source_column": "basecurrency",
+        "target_table": "#acct",
+        "target_column": "basecurrency",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.account",
+        "source_column": "branchcode",
+        "target_table": "#acct",
+        "target_column": "branchcode",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.account",
+        "source_column": "customerid",
+        "target_table": "#acct",
+        "target_column": "customerid",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.account",
+        "source_column": "overdraftlimit",
+        "target_table": "#acct",
+        "target_column": "overdraftlimit",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.account",
+        "source_column": "productcode",
+        "target_table": "#acct",
+        "target_column": "productcode",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.account",
+        "source_column": "status",
+        "target_table": "#acct",
+        "target_column": "status",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.currencyrate",
+        "source_column": "asof",
+        "target_table": "#fx",
+        "target_column": "asof",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.currencyrate",
+        "source_column": "fromcurrency",
+        "target_table": "#fx",
+        "target_column": "fromccy",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.currencyrate",
+        "source_column": "rate",
+        "target_table": "#fx",
+        "target_column": "rate",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.currencyrate",
+        "source_column": "tocurrency",
+        "target_table": "#fx",
+        "target_column": "toccy",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "direction",
+        "target_table": "#gl",
+        "target_column": "credit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "amountbase",
+        "target_table": "#gl",
+        "target_column": "credit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "direction",
+        "target_table": "#gl",
+        "target_column": "debit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "amountbase",
+        "target_table": "#gl",
+        "target_column": "debit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "direction",
+        "target_table": "#gl",
+        "target_column": "glaccount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "gl_debit",
+        "target_table": "#gl",
+        "target_column": "glaccount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "gl_credit",
+        "target_table": "#gl",
+        "target_column": "glaccount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "hashid",
+        "target_table": "#gl",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "joinmap",
+        "source_column": "hashid",
+        "target_table": "#gl",
+        "target_column": "narrative",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "invalidreason",
+        "target_table": "#invalid",
+        "target_column": "reason",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "srcid",
+        "target_table": "#invalid",
+        "target_column": "srcid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "txnexternalid",
+        "target_table": "#invalid",
+        "target_column": "txnexternalid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "accountid",
+        "target_table": "#post",
+        "target_column": "accountid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "amountbase",
+        "target_table": "#post",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "direction",
+        "target_table": "#post",
+        "target_column": "direction",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "feeamount",
+        "target_table": "#post",
+        "target_column": "feeamount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "hashid",
+        "target_table": "#post",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "narrative",
+        "target_table": "#post",
+        "target_column": "narrative",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "riskscore",
+        "target_table": "#post",
+        "target_column": "riskscore",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "txntype",
+        "target_table": "#post",
+        "target_column": "txntype",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "accountno",
+        "target_table": "#raw",
+        "target_column": "accountno",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "amount",
+        "target_table": "#raw",
+        "target_column": "amount",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "batchdate",
+        "target_table": "#raw",
+        "target_column": "batchdate",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "batchid",
+        "target_table": "#raw",
+        "target_column": "batchid",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "channel",
+        "target_table": "#raw",
+        "target_column": "channel",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "counterparty",
+        "target_table": "#raw",
+        "target_column": "counterparty",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "currency",
+        "target_table": "#raw",
+        "target_column": "currency",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "direction",
+        "target_table": "#raw",
+        "target_column": "direction",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "narrative",
+        "target_table": "#raw",
+        "target_column": "narrative",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "srcid",
+        "target_table": "#raw",
+        "target_column": "srcid",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "txndate",
+        "target_table": "#raw",
+        "target_column": "txndate",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "txnexternalid",
+        "target_table": "#raw",
+        "target_column": "txnexternalid",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "txntype",
+        "target_table": "#raw",
+        "target_column": "txntype",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "valuedate",
+        "target_table": "#raw",
+        "target_column": "valuedate",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "accountid",
+        "target_table": "#stage",
+        "target_column": "accountid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "accountno",
+        "target_table": "#stage",
+        "target_column": "accountno",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "amount",
+        "target_table": "#stage",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "fxrate",
+        "target_table": "#stage",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "amount",
+        "target_table": "#stage",
+        "target_column": "amountraw",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "basecurrency",
+        "target_table": "#stage",
+        "target_column": "basecurrency",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "branchcode",
+        "target_table": "#stage",
+        "target_column": "branchcode",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "channel",
+        "target_table": "#stage",
+        "target_column": "channel",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "currency",
+        "target_table": "#stage",
+        "target_column": "currencyraw",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "customerid",
+        "target_table": "#stage",
+        "target_column": "customerid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "direction",
+        "target_table": "#stage",
+        "target_column": "direction",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "txnexternalid",
+        "target_table": "#stage",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "accountno",
+        "target_table": "#stage",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "amount",
+        "target_table": "#stage",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "currency",
+        "target_table": "#stage",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "direction",
+        "target_table": "#stage",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "txntype",
+        "target_table": "#stage",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "narrative",
+        "target_table": "#stage",
+        "target_column": "narrative",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "overdraftlimit",
+        "target_table": "#stage",
+        "target_column": "overdraftlimit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "productcode",
+        "target_table": "#stage",
+        "target_column": "productcode",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "srcid",
+        "target_table": "#stage",
+        "target_column": "srcid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "acctstatus",
+        "target_table": "#stage",
+        "target_column": "status",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "txndate",
+        "target_table": "#stage",
+        "target_column": "txndate",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "txnexternalid",
+        "target_table": "#stage",
+        "target_column": "txnexternalid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "txntype",
+        "target_table": "#stage",
+        "target_column": "txntype",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "x",
+        "source_column": "valuedate",
+        "target_table": "#stage",
+        "target_column": "valuedate",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "hashid",
+        "target_table": "#valid",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#invalid",
+        "source_column": "reason",
+        "target_table": "audit.failedtxn",
+        "target_column": "reason",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "txnexternalid",
+        "target_table": "audit.failedtxn",
+        "target_column": "txnexternalid",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "#invalid",
+        "source_column": "txnexternalid",
+        "target_table": "audit.failedtxn",
+        "target_column": "txnexternalid",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "core.balances",
+        "source_column": "accountid",
+        "target_table": "bal",
+        "target_column": "accountid",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "core.balances",
+        "source_column": "availablebalance",
+        "target_table": "bal",
+        "target_column": "availablebalance",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#gl",
+        "source_column": "credit",
+        "target_table": "core.glwork",
+        "target_column": "credit",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "#gl",
+        "source_column": "debit",
+        "target_table": "core.glwork",
+        "target_column": "debit",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "#gl",
+        "source_column": "glaccount",
+        "target_table": "core.glwork",
+        "target_column": "glaccount",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "#gl",
+        "source_column": "hashid",
+        "target_table": "core.glwork",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "#gl",
+        "source_column": "narrative",
+        "target_table": "core.glwork",
+        "target_column": "narrative",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "#gl",
+        "source_column": "postingdate",
+        "target_table": "core.glwork",
+        "target_column": "postingdate",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "feerule",
+        "source_column": "feeflat",
+        "target_table": "feecalc",
+        "target_column": "feeamount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "feerule",
+        "source_column": "feepct",
+        "target_table": "feecalc",
+        "target_column": "feeamount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "amountbase",
+        "target_table": "feecalc",
+        "target_column": "feeamount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "feerule",
+        "source_column": "feecode",
+        "target_table": "feecalc",
+        "target_column": "feecode",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "hashid",
+        "target_table": "feecalc",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.feeconfig",
+        "source_column": "channel",
+        "target_table": "feerule",
+        "target_column": "channel",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.feeconfig",
+        "source_column": "feecode",
+        "target_table": "feerule",
+        "target_column": "feecode",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.feeconfig",
+        "source_column": "feeflat",
+        "target_table": "feerule",
+        "target_column": "feeflat",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.feeconfig",
+        "source_column": "feepct",
+        "target_table": "feerule",
+        "target_column": "feepct",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.feeconfig",
+        "source_column": "maxamt",
+        "target_table": "feerule",
+        "target_column": "maxamt",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.feeconfig",
+        "source_column": "minamt",
+        "target_table": "feerule",
+        "target_column": "minamt",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.product",
+        "source_column": "productcode",
+        "target_table": "feerule",
+        "target_column": "productcode",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "a",
+        "source_column": "branchcode",
+        "target_table": "j",
+        "target_column": "acctstatus",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "a",
+        "source_column": "status",
+        "target_table": "j",
+        "target_column": "basecurrency",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "a",
+        "source_column": "customerid",
+        "target_table": "j",
+        "target_column": "branchcode",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "a",
+        "source_column": "accountid",
+        "target_table": "j",
+        "target_column": "customerid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "a",
+        "source_column": "basecurrency",
+        "target_table": "j",
+        "target_column": "overdraftlimit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "a",
+        "source_column": "overdraftlimit",
+        "target_table": "j",
+        "target_column": "productcode",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "src",
+        "source_column": "amountbase",
+        "target_table": "joinmap",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "src",
+        "source_column": "direction",
+        "target_table": "joinmap",
+        "target_column": "direction",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "map",
+        "source_column": "gl_credit",
+        "target_table": "joinmap",
+        "target_column": "gl_credit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "map",
+        "source_column": "gl_debit",
+        "target_table": "joinmap",
+        "target_column": "gl_debit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "src",
+        "source_column": "hashid",
+        "target_table": "joinmap",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.glmap",
+        "source_column": "gl_credit",
+        "target_table": "map",
+        "target_column": "gl_credit",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.glmap",
+        "source_column": "gl_debit",
+        "target_table": "map",
+        "target_column": "gl_debit",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.glmap",
+        "source_column": "productcode",
+        "target_table": "map",
+        "target_column": "productcode",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "ref.glmap",
+        "source_column": "txntype",
+        "target_table": "map",
+        "target_column": "txntype",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "accountid",
+        "target_table": "needcheck",
+        "target_column": "accountid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "amountbase",
+        "target_table": "needcheck",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "direction",
+        "target_table": "needcheck",
+        "target_column": "direction",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "hashid",
+        "target_table": "needcheck",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "overdraftlimit",
+        "target_table": "needcheck",
+        "target_column": "overdraftlimit",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "hashid",
+        "target_table": "scores",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "amountbase",
+        "target_table": "scores",
+        "target_column": "score",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "channel",
+        "target_table": "scores",
+        "target_column": "score",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "txntype",
+        "target_table": "scores",
+        "target_column": "score",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#stage",
+        "source_column": "narrative",
+        "target_table": "scores",
+        "target_column": "score",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "accountid",
+        "target_table": "slice",
+        "target_column": "accountid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "amountbase",
+        "target_table": "slice",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "direction",
+        "target_table": "slice",
+        "target_column": "direction",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#valid",
+        "source_column": "hashid",
+        "target_table": "slice",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "slice",
+        "source_column": "accountid",
+        "target_table": "src",
+        "target_column": "accountid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "amountbase",
+        "target_table": "src",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "direction",
+        "target_table": "src",
+        "target_column": "direction",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "slice",
+        "source_column": "hashid",
+        "target_table": "src",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#acct",
+        "source_column": "productcode",
+        "target_table": "src",
+        "target_column": "productcode",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "txntype",
+        "target_table": "src",
+        "target_column": "txntype",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#fx",
+        "source_column": "rate",
+        "target_table": "x",
+        "target_column": "toccy",
+        "source_is_temp": true,
+        "target_is_temp": true
+      }
+    ]
+  },
   "merge_patterns": [
     {
       "source_table": "temp_table_pattern",
@@ -328,5 +1297,5 @@
     }
   ],
   "temp_table_patterns": [],
-  "analysis_timestamp": "2025-08-18T19:23:15Z"
+  "analysis_timestamp": "2025-08-18T20:13:10Z"
 }

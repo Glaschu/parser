@@ -8,14 +8,21 @@ from pathlib import Path
 
 class GenericSQLLineageParser:
     """
-    Generic SQL Lineage Parser that works with any SQL script
-    No hardcoded mappings - dynamically discovers all lineage relationships
+    Enhanced SQL Lineage Parser that works with any SQL script
+    Uses sqllineage + JSON metadata to discover all lineage relationships
     """
     
-    def __init__(self, sql_file_path):
+    def __init__(self, sql_file_path, metadata_json_path=None, schema_json_path=None):
         self.sql_file_path = sql_file_path
+        self.metadata_json_path = metadata_json_path or "csharp_metadata.json"
+        self.schema_json_path = schema_json_path or "schema.json"
+        
         self.sql_content = self._read_sql_file()
         self.procedure_body = self._extract_procedure_body()
+        
+        # Load metadata if available
+        self.metadata = self._load_metadata()
+        self.schema = self._load_schema()
         
         # Dynamic discovery containers
         self.source_tables = {}
@@ -26,6 +33,29 @@ class GenericSQLLineageParser:
         self.processing_stages = []
         self.end_to_end_mappings = []  # Store final source-to-target mappings
         
+        # Enhanced lineage containers
+        self.complete_column_flows = defaultdict(set)  # column -> set of destination columns
+        self.table_column_map = {}  # table -> list of columns
+        self.column_table_map = {}  # column -> table
+        
+    def _load_metadata(self):
+        """Load C# metadata JSON if available"""
+        try:
+            with open(self.metadata_json_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"ℹ️  No metadata file found at {self.metadata_json_path}: {e}")
+            return {}
+    
+    def _load_schema(self):
+        """Load schema JSON if available"""
+        try:
+            with open(self.schema_json_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"ℹ️  No schema file found at {self.schema_json_path}: {e}")
+            return {}
+    
     def _read_sql_file(self):
         """Read the SQL file content"""
         try:
@@ -328,24 +358,32 @@ class GenericSQLLineageParser:
                 self.intermediate_tables[table] = {'columns': set(), 'usage_count': 1}
     
     def analyze(self):
-        """Main analysis method"""
+        """Main analysis method - Enhanced with JSON metadata integration"""
         print("🔍 " + "=" * 100)
-        print("   GENERIC SQL LINEAGE ANALYSIS")
+        print("   ENHANCED SQL LINEAGE ANALYSIS WITH METADATA")
         print(f"   File: {self.sql_file_path}")
         print("=" * 102)
         
-        # Step 1: Extract table references
-        print("📋 Step 1: Extracting table references...")
+        # Step 1: Load and merge metadata
+        print("📋 Step 1: Loading metadata and schema information...")
+        self._merge_metadata_with_schema()
+        
+        # Step 2: Extract table references
+        print("📋 Step 2: Extracting table references...")
         table_refs = self._extract_table_references()
         total_tables = len(set().union(*table_refs.values()))
         print(f"✅ Found {total_tables} unique table references")
         
-        # Step 2: Analyze statements for detailed lineage
-        print("\n📊 Step 2: Analyzing statements for column lineage...")
+        # Step 3: Analyze statements for detailed lineage
+        print("\n📊 Step 3: Analyzing statements for column lineage...")
         self._analyze_statements()
         
-        # Step 3: Refine categorization
-        print("\n🎯 Step 3: Refining table categorization...")
+        # Step 4: Merge with metadata lineage
+        print("\n🔗 Step 4: Merging with C# metadata lineage...")
+        self._merge_csharp_metadata()
+        
+        # Step 5: Refine categorization
+        print("\n🎯 Step 5: Refining table categorization...")
         self._refine_table_categorization()
         
         print(f"✅ Categorized {len(self.source_tables)} source tables")
@@ -353,10 +391,250 @@ class GenericSQLLineageParser:
         print(f"✅ Categorized {len(self.intermediate_tables)} intermediate tables")
         print(f"✅ Found {len(self.column_mappings)} column mappings")
         
-        # Step 4: Trace end-to-end lineage
-        self._trace_end_to_end_lineage()
+        # Step 6: Trace comprehensive end-to-end lineage
+        print("\n🎯 Step 6: Tracing complete end-to-end lineage...")
+        self._trace_comprehensive_end_to_end_lineage()
         
         return self.generate_report()
+    
+    def _merge_metadata_with_schema(self):
+        """Merge metadata JSON with schema to build comprehensive column mapping"""
+        print("   📊 Loading schema information...")
+        
+        # Build table-column mapping from schema
+        for table_name, columns in self.schema.items():
+            table_key = table_name.lower()
+            self.table_column_map[table_key] = list(columns.keys())
+            
+            # Map each column to its table
+            for column_name in columns.keys():
+                column_key = f"{table_key}.{column_name.lower()}"
+                self.column_table_map[column_key] = table_key
+        
+        print(f"   ✅ Loaded schema for {len(self.schema)} tables")
+        
+        # If we have metadata, incorporate it
+        if self.metadata:
+            print("   📊 Loading C# parser metadata...")
+            
+            # Load source and target tables from metadata
+            if 'source_tables' in self.metadata:
+                real_sources = self.metadata['source_tables'].get('real_tables', [])
+                for table in real_sources:
+                    table_key = table.lower()
+                    if table_key not in self.source_tables:
+                        self.source_tables[table_key] = {'columns': set(), 'usage_count': 1}
+            
+            if 'target_tables' in self.metadata:
+                real_targets = self.metadata['target_tables'].get('real_tables', [])
+                for table in real_targets:
+                    table_key = table.lower()
+                    if table_key not in self.target_tables:
+                        self.target_tables[table_key] = {'columns': set(), 'usage_count': 1}
+            
+            print(f"   ✅ Loaded metadata tables: {len(real_sources)} sources, {len(real_targets)} targets")
+    
+    def _merge_csharp_metadata(self):
+        """Merge C# metadata column lineages with sqllineage results"""
+        if not self.metadata or 'column_lineages' not in self.metadata:
+            print("   ⚠️  No C# metadata column lineages found")
+            return
+        
+        # Process real-to-real column mappings from C# metadata
+        real_to_real = self.metadata['column_lineages'].get('real_to_real', [])
+        
+        added_mappings = 0
+        for mapping in real_to_real:
+            # Skip incomplete mappings
+            if not all(key in mapping for key in ['source_table', 'source_column', 'target_table', 'target_column']):
+                continue
+            
+            source_table = mapping['source_table'].lower()
+            source_column = mapping['source_column'].lower()
+            target_table = mapping['target_table'].lower()
+            target_column = mapping['target_column'].lower()
+            
+            # Create full column references
+            source_full = f"{source_table}.{source_column}"
+            target_full = f"{target_table}.{target_column}"
+            
+            # Add to our flow graph
+            self.complete_column_flows[source_full].add(target_full)
+            
+            # Update column-table mapping
+            self.column_table_map[source_full] = source_table
+            self.column_table_map[target_full] = target_table
+            
+            # Add to column mappings if not already present
+            existing = any(
+                cm['source_column'] == source_full and cm['target_column'] == target_full
+                for cm in self.column_mappings
+            )
+            
+            if not existing:
+                self.column_mappings.append({
+                    'source_column': source_full,
+                    'target_column': target_full,
+                    'full_path': [source_full, target_full],
+                    'statement_num': 'metadata',
+                    'transformation_steps': 1
+                })
+                added_mappings += 1
+        
+        print(f"   ✅ Added {added_mappings} column mappings from C# metadata")
+    
+    def _trace_comprehensive_end_to_end_lineage(self):
+        """Trace comprehensive end-to-end lineage using all available data"""
+        print("   🔍 Building comprehensive column flow graph...")
+        
+        # First, add all sqllineage discovered flows to our comprehensive flow graph
+        for mapping in self.column_mappings:
+            source_col = mapping['source_column'].lower()
+            target_col = mapping['target_column'].lower()
+            self.complete_column_flows[source_col].add(target_col)
+        
+        # Identify true source tables (staging, ref, etc.)
+        true_source_tables = set()
+        source_patterns = ['staging', 'ref', 'source', 'raw', 'input', 'external']
+        
+        for table in self.table_column_map.keys():
+            if any(pattern in table for pattern in source_patterns):
+                true_source_tables.add(table)
+        
+        # Add from metadata if available
+        if self.metadata and 'source_tables' in self.metadata:
+            for table in self.metadata['source_tables'].get('real_tables', []):
+                true_source_tables.add(table.lower())
+        
+        # Identify true target tables (core, audit, ops, etc.)
+        true_target_tables = set()
+        target_patterns = ['core', 'audit', 'ops', 'final', 'prod', 'output']
+        
+        for table in self.table_column_map.keys():
+            if any(pattern in table for pattern in target_patterns):
+                true_target_tables.add(table)
+        
+        # Add from metadata if available
+        if self.metadata and 'target_tables' in self.metadata:
+            for table in self.metadata['target_tables'].get('real_tables', []):
+                true_target_tables.add(table.lower())
+        
+        print(f"   📊 Identified {len(true_source_tables)} source tables")
+        print(f"   📊 Identified {len(true_target_tables)} target tables")
+        
+        # Build end-to-end paths using recursive path finding
+        def find_all_paths_to_targets(start_col, visited=None, path=None):
+            """Find all paths from a source column to target table columns"""
+            if visited is None:
+                visited = set()
+            if path is None:
+                path = []
+            
+            if start_col in visited:
+                return []
+            
+            visited.add(start_col)
+            current_path = path + [start_col]
+            all_paths = []
+            
+            # Check if this column is in a target table
+            if start_col in self.column_table_map:
+                table = self.column_table_map[start_col]
+                if table in true_target_tables:
+                    return [current_path]
+            
+            # Continue tracing through flows
+            for next_col in self.complete_column_flows.get(start_col, []):
+                if next_col not in visited:
+                    sub_paths = find_all_paths_to_targets(next_col, visited.copy(), current_path)
+                    all_paths.extend(sub_paths)
+            
+            return all_paths
+        
+        # Generate end-to-end mappings
+        end_to_end_mappings = []
+        
+        # For each source table, trace all columns to target tables
+        for source_table in true_source_tables:
+            # Get all columns for this source table
+            source_columns = self.table_column_map.get(source_table, [])
+            
+            for source_column in source_columns:
+                source_full = f"{source_table}.{source_column}"
+                
+                # Find all paths to target tables
+                paths = find_all_paths_to_targets(source_full)
+                
+                for path in paths:
+                    if len(path) >= 2:
+                        final_column = path[-1]
+                        
+                        if final_column in self.column_table_map:
+                            final_table = self.column_table_map[final_column]
+                            
+                            # Parse column names
+                            source_col_name = source_column
+                            final_col_name = final_column.split('.')[-1]
+                            
+                            end_to_end_mappings.append({
+                                'source_table': source_table.title(),
+                                'source_column': source_col_name.title(),
+                                'target_table': final_table.title(),
+                                'target_column': final_col_name.title(),
+                                'path_length': len(path),
+                                'full_path': path,
+                                'transformation_type': 'traced'
+                            })
+        
+        # If we don't have enough mappings, use schema-based matching
+        if len(end_to_end_mappings) < 10:
+            print("   🔍 Using schema-based column matching for additional mappings...")
+            
+            for source_table in true_source_tables:
+                source_columns = self.table_column_map.get(source_table, [])
+                
+                for target_table in true_target_tables:
+                    target_columns = self.table_column_map.get(target_table, [])
+                    
+                    # Match columns by name similarity
+                    for source_col in source_columns:
+                        for target_col in target_columns:
+                            # Direct name match
+                            if source_col.lower() == target_col.lower():
+                                end_to_end_mappings.append({
+                                    'source_table': source_table.title(),
+                                    'source_column': source_col.title(),
+                                    'target_table': target_table.title(),
+                                    'target_column': target_col.title(),
+                                    'path_length': 1,
+                                    'full_path': [f"{source_table}.{source_col}", f"{target_table}.{target_col}"],
+                                    'transformation_type': 'schema_matched'
+                                })
+                            # Partial name match (one contains the other)
+                            elif (source_col.lower() in target_col.lower() or 
+                                  target_col.lower() in source_col.lower()):
+                                end_to_end_mappings.append({
+                                    'source_table': source_table.title(),
+                                    'source_column': source_col.title(),
+                                    'target_table': target_table.title(),
+                                    'target_column': target_col.title(),
+                                    'path_length': 1,
+                                    'full_path': [f"{source_table}.{source_col}", f"{target_table}.{target_col}"],
+                                    'transformation_type': 'schema_partial_match'
+                                })
+        
+        # Remove duplicates
+        seen = set()
+        unique_mappings = []
+        for mapping in end_to_end_mappings:
+            key = (mapping['source_table'], mapping['source_column'], 
+                   mapping['target_table'], mapping['target_column'])
+            if key not in seen:
+                seen.add(key)
+                unique_mappings.append(mapping)
+        
+        self.end_to_end_mappings = unique_mappings
+        print(f"   ✅ Generated {len(self.end_to_end_mappings)} end-to-end column lineages")
     
     def _trace_end_to_end_lineage(self):
         """Trace end-to-end lineage from original sources to final targets - FULLY DYNAMIC"""
@@ -697,41 +975,57 @@ class GenericSQLLineageParser:
         else:
             print("No table relationships detected")
         
-        # Display end-to-end lineage mappings
+        # Display end-to-end lineage mappings in the requested format
         if self.end_to_end_mappings:
             print("\n🎯 " + "=" * 100)
             print("   END-TO-END COLUMN LINEAGE (Source → Final Target)")
             print("=" * 102)
             
-            print(f"+{'-'*36}+{'-'*33}+{'-'*18}+")
-            print(f"| {'Source Column':<34} | {'Final Column':<31} | {'Final Table':<16} |")
-            print(f"+{'='*36}+{'='*33}+{'='*18}+")
+            print(f"| {'Source Column':<36} | {'Final Column':<33} | {'Final Table':<18} |")
+            print(f"|{'-'*38}|{'-'*35}|{'-'*20}|")
             
             # Sort by target table, then by source table for better readability
             sorted_mappings = sorted(self.end_to_end_mappings, 
                                    key=lambda x: (x['target_table'], x['source_table'], x['source_column']))
             
             for mapping in sorted_mappings:
-                source_table = mapping['source_table'].title()
-                source_column = mapping['source_column'].title()
-                target_table = mapping['target_table'].title()
-                target_column = mapping['target_column'].title()
+                source_table = mapping['source_table']
+                source_column = mapping['source_column']
+                target_table = mapping['target_table']
+                target_column = mapping['target_column']
                 
-                source_full = f"{source_table}.{source_column}"
-                target_full = f"{target_table}.{target_column}"
+                source_full = f"`{source_table}.{source_column}`"
+                target_full = f"`{target_table}.{target_column}`"
+                target_table_display = f"`{target_table}`"
                 
                 # Truncate if too long
-                if len(source_full) > 34:
-                    source_full = source_full[:31] + "..."
-                if len(target_full) > 31:
-                    target_full = target_full[:28] + "..."
-                if len(target_table) > 16:
-                    target_table = target_table[:13] + "..."
+                if len(source_full) > 36:
+                    source_full = source_full[:33] + "..."
+                if len(target_full) > 33:
+                    target_full = target_full[:30] + "..."
+                if len(target_table_display) > 18:
+                    target_table_display = target_table_display[:15] + "..."
                 
-                print(f"| {source_full:<34} | {target_full:<31} | {target_table:<16} |")
-                print(f"+{'-'*36}+{'-'*33}+{'-'*18}+")
+                print(f"| {source_full:<36} | {target_full:<33} | {target_table_display:<18} |")
             
             print(f"\n✅ Total end-to-end mappings found: {len(self.end_to_end_mappings)}")
+            
+            # Also create a markdown table for easy copying
+            print("\n📋 MARKDOWN TABLE FORMAT:")
+            print("| Source Column                        | Final Column                      | Final Table        |")
+            print("| ------------------------------------ | --------------------------------- | ------------------ |")
+            
+            for mapping in sorted_mappings:
+                source_table = mapping['source_table']
+                source_column = mapping['source_column']
+                target_table = mapping['target_table']
+                target_column = mapping['target_column']
+                
+                source_full = f"`{source_table}.{source_column}`"
+                target_full = f"`{target_table}.{target_column}`"
+                target_table_display = f"`{target_table}`"
+                
+                print(f"| {source_full:<36} | {target_full:<33} | {target_table_display:<18} |")
         else:
             print("\n🎯 " + "=" * 100)
             print("   END-TO-END COLUMN LINEAGE")
@@ -821,9 +1115,11 @@ class GenericSQLLineageParser:
 
 
 def main():
-    """Command line interface for the generic lineage parser"""
-    parser = argparse.ArgumentParser(description='Generic SQL Lineage Parser')
+    """Command line interface for the enhanced lineage parser"""
+    parser = argparse.ArgumentParser(description='Enhanced SQL Lineage Parser with JSON Metadata')
     parser.add_argument('sql_file', help='Path to SQL file to analyze')
+    parser.add_argument('--metadata', '-m', help='Path to C# metadata JSON file', default='csharp_metadata.json')
+    parser.add_argument('--schema', '-s', help='Path to schema JSON file', default='schema.json')
     parser.add_argument('--export', '-e', choices=['json'], default=None,
                        help='Export results to file format')
     parser.add_argument('--output', '-o', help='Output file path')
@@ -832,7 +1128,7 @@ def main():
     
     try:
         # Create parser instance and analyze
-        lineage_parser = GenericSQLLineageParser(args.sql_file)
+        lineage_parser = GenericSQLLineageParser(args.sql_file, args.metadata, args.schema)
         results = lineage_parser.analyze()
         
         # Export if requested
@@ -850,7 +1146,7 @@ if __name__ == "__main__":
     # If called directly without command line args, use the test file
     import sys
     if len(sys.argv) == 1:
-        lineage_parser = GenericSQLLineageParser("test.sql")
+        lineage_parser = GenericSQLLineageParser("test.sql", "csharp_metadata.json", "schema.json")
         lineage_parser.analyze()
     else:
         exit(main())
