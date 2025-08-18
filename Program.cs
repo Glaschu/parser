@@ -424,10 +424,55 @@ namespace SqlParser
                         
                         columns.Add(columnName);
                     }
+                    else if (element is SelectStarExpression starExpr)
+                    {
+                        // For SELECT *, try to get columns from the source tables
+                        var sourceColumns = ExpandSelectStar(querySpec);
+                        columns.AddRange(sourceColumns);
+                    }
                 }
             }
             
             return columns;
+        }
+        
+        private List<string> ExpandSelectStar(QuerySpecification querySpec)
+        {
+            var expandedColumns = new List<string>();
+            
+            // Get all table aliases in the FROM clause
+            var fromVisitor = new FromClauseVisitor();
+            querySpec.FromClause?.Accept(fromVisitor);
+            
+            foreach (var tableAlias in fromVisitor.TableAliases)
+            {
+                var tableName = tableAlias.Value;
+                
+                // Check if it's a temp table we know about
+                if (_tempTableSchema.TryGetValue(tableName, out var tempCols))
+                {
+                    expandedColumns.AddRange(tempCols);
+                }
+                // Check if it's a CTE we know about
+                else if (_cteColumnMap.TryGetValue(tableName, out var cteCols))
+                {
+                    expandedColumns.AddRange(cteCols);
+                }
+                // Check if it's a real table in the schema
+                else if (_schema.TableExists(tableName))
+                {
+                    var schemaCols = _schema.GetColumnsForTable(tableName);
+                    expandedColumns.AddRange(schemaCols.Select(c => c.ToLowerInvariant()));
+                }
+                else
+                {
+                    // Unknown table - add some generic column names
+                    Console.WriteLine($"DEBUG: Unknown table for SELECT *: {tableName}");
+                    // We'll return empty for now, but could add generic names if needed
+                }
+            }
+            
+            return expandedColumns;
         }
 
         private void ProcessSelect(QuerySpecification querySpec, string targetName, List<string> targetCols, bool manageStack = true)
@@ -446,15 +491,15 @@ namespace SqlParser
 
             for (int i = 0; i < querySpec.SelectElements.Count; i++)
             {
-                if (i >= targetCols.Count) break;
-
-                var targetCol = new TableColumn(targetName, targetCols[i]);
                 var selectElement = querySpec.SelectElements[i];
-
-                Console.WriteLine($"DEBUG: Processing element {i}: target column {targetCol}");
 
                 if (selectElement is SelectScalarExpression sse)
                 {
+                    if (i >= targetCols.Count) break;
+                    
+                    var targetCol = new TableColumn(targetName, targetCols[i]);
+                    Console.WriteLine($"DEBUG: Processing element {i}: target column {targetCol}");
+                    
                     var sourceCols = ExtractSourceColumns(sse.Expression);
                     Console.WriteLine($"DEBUG: Found {sourceCols.Count} source columns for {targetCol}");
                     
@@ -465,13 +510,134 @@ namespace SqlParser
                         if (!sourceCol.IsTemporary && !IsCte(sourceCol.TableName)) _analysis.InputTables.Add(sourceCol.TableName);
                     }
                 }
+                else if (selectElement is SelectStarExpression starExpr)
+                {
+                    Console.WriteLine($"DEBUG: Processing SELECT * expression");
+                    
+                    // Handle SELECT * by expanding to all columns from source tables
+                    var allAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach(var scope in _aliasStack.Reverse()) 
+                    {
+                        foreach(var alias in scope) allAliases[alias.Key] = alias.Value;
+                    }
+                    
+                    // Get the qualifier (table alias) if specified (e.g., "R.*")
+                    string tableQualifier = starExpr.Qualifier?.Identifiers?.LastOrDefault()?.Value;
+                    
+                    if (!string.IsNullOrEmpty(tableQualifier) && allAliases.TryGetValue(tableQualifier, out var tableName))
+                    {
+                        // Qualified SELECT * (e.g., "R.*")
+                        ProcessQualifiedSelectStar(targetName, targetCols, ref i, tableName, tableQualifier);
+                    }
+                    else
+                    {
+                        // Unqualified SELECT * - expand all tables in scope
+                        ProcessUnqualifiedSelectStar(targetName, targetCols, ref i, allAliases);
+                    }
+                }
                 else
                 {
                     Console.WriteLine($"DEBUG: Select element is not SelectScalarExpression: {selectElement.GetType().Name}");
+                    if (i < targetCols.Count)
+                    {
+                        var targetCol = new TableColumn(targetName, targetCols[i]);
+                        Console.WriteLine($"DEBUG: Processing element {i}: target column {targetCol}");
+                    }
                 }
             }
 
             if (manageStack) _aliasStack.Pop();
+        }
+        
+        private void ProcessQualifiedSelectStar(string targetName, List<string> targetCols, ref int index, string tableName, string tableAlias)
+        {
+            List<string> sourceColumns = null;
+            
+            // Get columns from temp table, CTE, or schema
+            if (_tempTableSchema.TryGetValue(tableName, out var tempCols))
+            {
+                sourceColumns = tempCols;
+            }
+            else if (_cteColumnMap.TryGetValue(tableName, out var cteCols))
+            {
+                sourceColumns = cteCols;
+            }
+            else if (_schema.TableExists(tableName))
+            {
+                sourceColumns = _schema.GetColumnsForTable(tableName).Select(c => c.ToLowerInvariant()).ToList();
+            }
+            
+            if (sourceColumns != null)
+            {
+                Console.WriteLine($"DEBUG: Expanding {tableAlias}.* to {sourceColumns.Count} columns from {tableName}");
+                
+                for (int j = 0; j < sourceColumns.Count && (index + j) < targetCols.Count; j++)
+                {
+                    var targetCol = new TableColumn(targetName, targetCols[index + j]);
+                    var sourceCol = new TableColumn(tableName, sourceColumns[j]);
+                    
+                    Console.WriteLine($"DEBUG: SELECT * lineage: {sourceCol} -> {targetCol}");
+                    _lineageFragments.Add(new LineageFragment { Target = targetCol, Source = sourceCol });
+                    
+                    if (!sourceCol.IsTemporary && !IsCte(sourceCol.TableName))
+                    {
+                        _analysis.InputTables.Add(sourceCol.TableName);
+                    }
+                }
+                
+                index += sourceColumns.Count - 1; // Adjust index to account for expanded columns
+            }
+        }
+        
+        private void ProcessUnqualifiedSelectStar(string targetName, List<string> targetCols, ref int index, Dictionary<string, string> allAliases)
+        {
+            var allExpandedColumns = new List<(string tableName, string columnName)>();
+            
+            foreach (var aliasEntry in allAliases)
+            {
+                var tableName = aliasEntry.Value;
+                List<string> sourceColumns = null;
+                
+                if (_tempTableSchema.TryGetValue(tableName, out var tempCols))
+                {
+                    sourceColumns = tempCols;
+                }
+                else if (_cteColumnMap.TryGetValue(tableName, out var cteCols))
+                {
+                    sourceColumns = cteCols;
+                }
+                else if (_schema.TableExists(tableName))
+                {
+                    sourceColumns = _schema.GetColumnsForTable(tableName).Select(c => c.ToLowerInvariant()).ToList();
+                }
+                
+                if (sourceColumns != null)
+                {
+                    foreach (var col in sourceColumns)
+                    {
+                        allExpandedColumns.Add((tableName, col));
+                    }
+                }
+            }
+            
+            Console.WriteLine($"DEBUG: Expanding unqualified SELECT * to {allExpandedColumns.Count} columns");
+            
+            for (int j = 0; j < allExpandedColumns.Count && (index + j) < targetCols.Count; j++)
+            {
+                var targetCol = new TableColumn(targetName, targetCols[index + j]);
+                var (tableName, columnName) = allExpandedColumns[j];
+                var sourceCol = new TableColumn(tableName, columnName);
+                
+                Console.WriteLine($"DEBUG: SELECT * lineage: {sourceCol} -> {targetCol}");
+                _lineageFragments.Add(new LineageFragment { Target = targetCol, Source = sourceCol });
+                
+                if (!sourceCol.IsTemporary && !IsCte(sourceCol.TableName))
+                {
+                    _analysis.InputTables.Add(sourceCol.TableName);
+                }
+            }
+            
+            index += allExpandedColumns.Count - 1; // Adjust index to account for expanded columns
         }
 
         private List<TableColumn> ExtractSourceColumns(TSqlFragment expression)
@@ -539,11 +705,41 @@ namespace SqlParser
         {
             Console.WriteLine($"DEBUG: Starting ResolveAndMergeLineage with {_lineageFragments.Count} fragments");
             
-            // Include ALL lineage fragments - no filtering for hardcoded patterns
-            // Let the consuming system decide what to include/exclude
+            // Build a lookup dictionary for faster lineage resolution
+            var lineageLookup = new Dictionary<TableColumn, List<TableColumn>>();
             
-            // Remove duplicates only
-            var uniqueLineages = _lineageFragments
+            foreach (var fragment in _lineageFragments)
+            {
+                if (!lineageLookup.ContainsKey(fragment.Target))
+                    lineageLookup[fragment.Target] = new List<TableColumn>();
+                lineageLookup[fragment.Target].Add(fragment.Source);
+            }
+            
+            // First, add all direct lineages (including temp table connections)
+            var allLineages = new List<LineageFragment>(_lineageFragments);
+            
+            // Then add ultimate source lineages for temp/CTE targets
+            var visited = new HashSet<TableColumn>();
+            
+            foreach (var fragment in _lineageFragments)
+            {
+                // Only resolve ultimate sources for temp/CTE targets to preserve intermediate connections
+                if (IsTemporaryOrCte(fragment.Target.TableName))
+                {
+                    var ultimateSources = ResolveToUltimateSources(fragment.Target, lineageLookup, visited);
+                    foreach (var source in ultimateSources)
+                    {
+                        // Only add if this creates a new connection (not already covered by direct lineages)
+                        if (!allLineages.Any(l => l.Target.Equals(fragment.Target) && l.Source.Equals(source)))
+                        {
+                            allLineages.Add(new LineageFragment { Target = fragment.Target, Source = source });
+                        }
+                    }
+                }
+            }
+            
+            // Remove duplicates
+            var uniqueLineages = allLineages
                 .GroupBy(l => new { SourceTable = l.Source.TableName, SourceColumn = l.Source.ColumnName, TargetTable = l.Target.TableName, TargetColumn = l.Target.ColumnName })
                 .Select(g => g.First())
                 .ToList();
@@ -551,7 +747,7 @@ namespace SqlParser
             _analysis.FinalLineages.AddRange(uniqueLineages);
             
             // Add ALL tables to input/output (let consuming system filter)
-            foreach (var fragment in _lineageFragments)
+            foreach (var fragment in uniqueLineages)
             {
                 // Add source table to input tables
                 if (!string.IsNullOrEmpty(fragment.Source.TableName))
@@ -569,6 +765,52 @@ namespace SqlParser
             Console.WriteLine($"DEBUG: Final lineages count: {_analysis.FinalLineages.Count}");
             Console.WriteLine($"DEBUG: Input tables count: {_analysis.InputTables.Count}");
             Console.WriteLine($"DEBUG: Output tables count: {_analysis.OutputTables.Count}");
+        }
+        
+        private List<TableColumn> ResolveToUltimateSources(TableColumn target, Dictionary<TableColumn, List<TableColumn>> lineageLookup, HashSet<TableColumn> visited)
+        {
+            if (visited.Contains(target))
+            {
+                // Circular reference detected, return empty to avoid infinite loops
+                return new List<TableColumn>();
+            }
+            
+            visited.Add(target);
+            var ultimateSources = new List<TableColumn>();
+            
+            if (lineageLookup.TryGetValue(target, out var immediateSources))
+            {
+                foreach (var immediateSource in immediateSources)
+                {
+                    // If the source is a temp table or CTE, continue resolution
+                    if (IsTemporaryOrCte(immediateSource.TableName))
+                    {
+                        var nestedSources = ResolveToUltimateSources(immediateSource, lineageLookup, new HashSet<TableColumn>(visited));
+                        ultimateSources.AddRange(nestedSources);
+                    }
+                    else
+                    {
+                        // This is an ultimate source (real table)
+                        ultimateSources.Add(immediateSource);
+                    }
+                }
+            }
+            else
+            {
+                // No further sources found, this might be an ultimate source itself
+                if (!IsTemporaryOrCte(target.TableName))
+                {
+                    ultimateSources.Add(target);
+                }
+            }
+            
+            visited.Remove(target);
+            return ultimateSources;
+        }
+        
+        private bool IsTemporaryOrCte(string tableName)
+        {
+            return tableName.StartsWith("#") || IsCte(tableName);
         }
         
         private bool IsCte(string tableName) => _cteColumnMap.ContainsKey(tableName);
