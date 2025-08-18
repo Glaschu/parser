@@ -1,13 +1,15 @@
 {
   "procedure_name": "dbo.usp_ProcessDailyCoreBankingSettlement_Monster",
   "source_tables": [
+    "core.balances",
     "core.glwork",
     "core.ledgerwork",
-    "joinmap",
     "ref.account",
     "ref.currencyrate",
-    "staging.transactions",
-    "x"
+    "ref.feeconfig",
+    "ref.glmap",
+    "ref.product",
+    "staging.transactions"
   ],
   "target_tables": [
     "Audit.FailedTxn",
@@ -21,6 +23,12 @@
     "Ops.BatchRegistry"
   ],
   "column_lineages": [
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txnexternalid",
+      "target_table": "audit.failedtxn",
+      "target_column": "txnexternalid"
+    },
     {
       "source_table": "core.glwork",
       "source_column": "batchid",
@@ -62,6 +70,132 @@
       "source_column": "postingdate",
       "target_table": "core.gl",
       "target_column": "postingdate"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "direction",
+      "target_table": "core.glwork",
+      "target_column": "credit"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "amount",
+      "target_table": "core.glwork",
+      "target_column": "credit"
+    },
+    {
+      "source_table": "ref.currencyrate",
+      "source_column": "rate",
+      "target_table": "core.glwork",
+      "target_column": "credit"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "direction",
+      "target_table": "core.glwork",
+      "target_column": "debit"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "amount",
+      "target_table": "core.glwork",
+      "target_column": "debit"
+    },
+    {
+      "source_table": "ref.currencyrate",
+      "source_column": "rate",
+      "target_table": "core.glwork",
+      "target_column": "debit"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "direction",
+      "target_table": "core.glwork",
+      "target_column": "glaccount"
+    },
+    {
+      "source_table": "ref.glmap",
+      "source_column": "gl_debit",
+      "target_table": "core.glwork",
+      "target_column": "glaccount"
+    },
+    {
+      "source_table": "ref.glmap",
+      "source_column": "gl_credit",
+      "target_table": "core.glwork",
+      "target_column": "glaccount"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txnexternalid",
+      "target_table": "core.glwork",
+      "target_column": "hashid"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "accountno",
+      "target_table": "core.glwork",
+      "target_column": "hashid"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "amount",
+      "target_table": "core.glwork",
+      "target_column": "hashid"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "currency",
+      "target_table": "core.glwork",
+      "target_column": "hashid"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "direction",
+      "target_table": "core.glwork",
+      "target_column": "hashid"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txntype",
+      "target_table": "core.glwork",
+      "target_column": "hashid"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txnexternalid",
+      "target_table": "core.glwork",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "accountno",
+      "target_table": "core.glwork",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "amount",
+      "target_table": "core.glwork",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "currency",
+      "target_table": "core.glwork",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "direction",
+      "target_table": "core.glwork",
+      "target_column": "narrative"
+    },
+    {
+      "source_table": "staging.transactions",
+      "source_column": "txntype",
+      "target_table": "core.glwork",
+      "target_column": "narrative"
     },
     {
       "source_table": "core.ledgerwork",
@@ -194,5 +328,5 @@
     }
   ],
   "temp_table_patterns": [],
-  "analysis_timestamp": "2025-08-18T19:14:32Z"
+  "analysis_timestamp": "2025-08-18T19:23:15Z"
 }
