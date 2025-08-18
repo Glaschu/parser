@@ -306,54 +306,59 @@ namespace SqlParser
         {
             Console.WriteLine($"DEBUG: Starting ResolveAndMergeLineage with {_lineageFragments.Count} fragments");
             
-            // Debug: Print all fragments
-            foreach (var fragment in _lineageFragments)
-            {
-                Console.WriteLine($"DEBUG: Fragment: {fragment.Source} -> {fragment.Target}");
-            }
+            // Instead of complex merging, just record direct lineages that we can identify clearly
+            // This reduces complexity and avoids over-merging that might create incorrect mappings
             
             // Group fragments by target to handle multiple sources per target
-            var groupedFragments = _lineageFragments.GroupBy(f => f.Target).ToList();
-            var lineageMap = new Dictionary<TableColumn, TableColumn>();
+            var directLineages = new List<LineageFragment>();
             
-            foreach (var group in groupedFragments)
+            foreach (var fragment in _lineageFragments)
             {
-                // For now, just take the first source if there are multiple
-                // This could be enhanced to handle complex multi-source scenarios
-                lineageMap[group.Key] = group.First().Source;
-            }
-
-            // Get all final fragments (non-CTE, non-temp table targets)
-            var finalFragments = _lineageFragments.Where(f => !IsCte(f.Target.TableName) && !f.Target.IsTemporary).ToList();
-
-            Console.WriteLine($"DEBUG: Found {_lineageFragments.Count} total lineage fragments");
-            Console.WriteLine($"DEBUG: Found {finalFragments.Count} final fragments (non-temp, non-CTE)");
-
-            foreach (var fragment in finalFragments)
-            {
-                Console.WriteLine($"DEBUG: Processing final fragment: {fragment.Source} -> {fragment.Target}");
+                Console.WriteLine($"DEBUG: Processing fragment: {fragment.Source} -> {fragment.Target}");
                 
-                var originalSource = FindOriginalSource(fragment.Source, lineageMap);
-                
-                Console.WriteLine($"DEBUG: Original source resolved to: {originalSource}");
-                Console.WriteLine($"DEBUG: Original source IsTemporary: {originalSource.IsTemporary}, IsCte: {IsCte(originalSource.TableName)}");
-                
-                // Only add if source is also non-temp and non-CTE
-                if (!IsCte(originalSource.TableName) && !originalSource.IsTemporary)
+                // Only include lineages where we have clear direct mappings
+                // Avoid complex intermediate resolution for now to prevent incorrect mappings
+                if (!IsCte(fragment.Target.TableName) && !fragment.Target.IsTemporary)
                 {
-                    _analysis.FinalLineages.Add(new LineageFragment
+                    // For direct source-to-target mappings (non-temp to final tables)
+                    if (!IsCte(fragment.Source.TableName) && !fragment.Source.IsTemporary)
                     {
-                        Target = fragment.Target,
-                        Source = originalSource
-                    });
-                    
-                    Console.WriteLine($"DEBUG: Added lineage: {originalSource} -> {fragment.Target}");
-                }
-                else
-                {
-                    Console.WriteLine($"DEBUG: Skipped lineage (temp/CTE source): {originalSource} -> {fragment.Target}");
+                        directLineages.Add(new LineageFragment
+                        {
+                            Target = fragment.Target,
+                            Source = fragment.Source
+                        });
+                        Console.WriteLine($"DEBUG: Added direct lineage: {fragment.Source} -> {fragment.Target}");
+                    }
+                    // For temp table to final table mappings (one-step resolution)
+                    else if (fragment.Source.IsTemporary)
+                    {
+                        // Find direct sources to this temp table
+                        var tempSources = _lineageFragments.Where(f => 
+                            f.Target.Equals(fragment.Source) && 
+                            !f.Source.IsTemporary && 
+                            !IsCte(f.Source.TableName)).ToList();
+                        
+                        foreach (var tempSource in tempSources)
+                        {
+                            directLineages.Add(new LineageFragment
+                            {
+                                Target = fragment.Target,
+                                Source = tempSource.Source
+                            });
+                            Console.WriteLine($"DEBUG: Added temp-resolved lineage: {tempSource.Source} -> {fragment.Target}");
+                        }
+                    }
                 }
             }
+            
+            // Remove duplicates and add to final lineages
+            var uniqueLineages = directLineages
+                .GroupBy(l => new { SourceTable = l.Source.TableName, SourceColumn = l.Source.ColumnName, TargetTable = l.Target.TableName, TargetColumn = l.Target.ColumnName })
+                .Select(g => g.First())
+                .ToList();
+            
+            _analysis.FinalLineages.AddRange(uniqueLineages);
             
             Console.WriteLine($"DEBUG: Final lineages count: {_analysis.FinalLineages.Count}");
         }

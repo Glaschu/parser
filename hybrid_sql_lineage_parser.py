@@ -305,30 +305,214 @@ class EnhancedGenericSQLLineageParser(GenericSQLLineageParser):
                             bridges[source_col] = target_col
                             print(f"   🔗 Bridge: {source_col} → {target_col} (C# MERGE pattern)")
         
-        # Strategy 3: Smart column name mapping for common transformation patterns
-        common_mappings = {
-            'hashid': 'idempotencykey',
-            'srcid': 'batchid',
-            'batchdate': 'postingdate',
-            'txnexternalid': 'hashid',
-            'fromccy': 'fromcurrency',
-            'toccy': 'tocurrency',
-            'fxrate': 'rate'
-        }
+        # Strategy 3: Dynamic pattern-based bridges (no hardcoded mappings)
+        # Look for common transformation patterns in intermediate tables that connect to targets
         
-        for intermediate_col, table in comprehensive_column_to_table.items():
-            if table in intermediate_tables:
-                column_name = intermediate_col.split('.')[-1]
-                if column_name in common_mappings:
-                    target_column_name = common_mappings[column_name]
-                    # Find target columns with this name
-                    matching_targets = [col for col in target_columns.get(target_column_name, [])]
-                    for target_col in matching_targets:
-                        if intermediate_col not in comprehensive_flows or target_col not in comprehensive_flows.get(intermediate_col, []):
-                            bridges[intermediate_col] = target_col
-                            print(f"   🔗 Bridge: {intermediate_col} → {target_col} (smart mapping: {column_name} → {target_column_name})")
+        # Find transformations within intermediate tables that suggest business logic
+        for intermediate_table in intermediate_tables:
+            intermediate_cols = [col for col, table in comprehensive_column_to_table.items() 
+                               if table == intermediate_table]
+            
+            # For each intermediate column, try to find target columns with related names
+            for intermediate_col in intermediate_cols:
+                intermediate_col_name = intermediate_col.split('.')[-1]
+                
+                # Look for target columns that might be related (same root name, variations)
+                for target_col, target_table in comprehensive_column_to_table.items():
+                    if target_table in final_target_tables:
+                        target_col_name = target_col.split('.')[-1]
+                        
+                        # Check for name similarity patterns (dynamic detection)
+                        if self._are_columns_related(intermediate_col_name, target_col_name):
+                            bridge_key = f"pattern_bridge_{intermediate_col}_{target_col}"
+                            if bridge_key not in bridges:
+                                bridges[bridge_key] = target_col
+                                print(f"   🔗 Bridge: {intermediate_col} → {target_col} (pattern similarity: {intermediate_col_name} ↔ {target_col_name})")
+        
+        # Strategy 5: Dynamic reference table analysis
+        # Find patterns where reference tables provide lookup data to targets
+        
+        reference_tables = set()
+        for col, table in comprehensive_column_to_table.items():
+            if any(ref_pattern in table for ref_pattern in ['ref.', 'reference', 'lookup', 'dim']):
+                reference_tables.add(table)
+        
+        # For each reference table, find columns that might resolve to target columns
+        for ref_table in reference_tables:
+            ref_cols = [col for col, table in comprehensive_column_to_table.items() if table == ref_table]
+            
+            for ref_col in ref_cols:
+                ref_col_name = ref_col.split('.')[-1]
+                
+                # Look for target columns that this reference might resolve to
+                for target_col, target_table in comprehensive_column_to_table.items():
+                    if target_table in final_target_tables:
+                        target_col_name = target_col.split('.')[-1]
+                        
+                        # Check if this looks like a reference resolution
+                        if self._is_reference_resolution(ref_col_name, target_col_name, ref_table):
+                            bridge_key = f"ref_bridge_{ref_col}_{target_col}"
+                            if bridge_key not in bridges:
+                                bridges[bridge_key] = target_col
+                                print(f"   🔗 Bridge: {ref_col} → {target_col} (reference resolution: {ref_table})")
+        
+        # Strategy 6: Dynamic FX/calculation bridges
+        # Find rate/calculation columns that affect amount columns
+        
+        calc_tables = set()
+        for col, table in comprehensive_column_to_table.items():
+            if any(calc_pattern in table for calc_pattern in ['fx', 'rate', 'currency']):
+                calc_tables.add(table)
+        
+        for calc_table in calc_tables:
+            calc_cols = [col for col, table in comprehensive_column_to_table.items() if table == calc_table]
+            
+            for calc_col in calc_cols:
+                calc_col_name = calc_col.split('.')[-1]
+                
+                # Rate/currency columns often affect amount calculations
+                if any(pattern in calc_col_name for pattern in ['rate', 'currency', 'fx']):
+                    # Find amount-related target columns
+                    for target_col, target_table in comprehensive_column_to_table.items():
+                        if target_table in final_target_tables:
+                            target_col_name = target_col.split('.')[-1]
+                            
+                            if 'amount' in target_col_name:
+                                bridge_key = f"calc_bridge_{calc_col}_{target_col}"
+                                if bridge_key not in bridges:
+                                    bridges[bridge_key] = target_col
+                                    print(f"   🔗 Bridge: {calc_col} → {target_col} (calculation: {calc_col_name} affects {target_col_name})")
         
         return bridges
+
+    def _is_reference_resolution(self, ref_col_name, target_col_name, ref_table):
+        """Dynamically determine if a reference column resolves to a target column"""
+        # Same column name suggests lookup
+        if ref_col_name == target_col_name:
+            return True
+        
+        # Dynamic table-based resolution
+        ref_table_lower = ref_table.lower()
+        ref_col_lower = ref_col_name.lower()
+        target_col_lower = target_col_name.lower()
+        
+        # If the reference table name appears in the target column, it's likely a resolution
+        table_parts = ref_table_lower.split('.')[-1]  # Get table name without schema
+        if table_parts in target_col_lower:
+            return True
+        
+        # Enhanced reference pattern detection
+        # Reference tables often provide lookup data for core business columns
+        if 'account' in ref_table_lower:
+            # Account reference can resolve to account-related columns
+            if any(pattern in target_col_lower for pattern in ['account', 'acct', 'customer', 'branch']):
+                return True
+        
+        if 'currency' in ref_table_lower:
+            # Currency reference can affect amount calculations
+            if any(pattern in target_col_lower for pattern in ['amount', 'currency', 'rate', 'fee', 'base']):
+                return True
+        
+        if 'rate' in ref_table_lower or 'fx' in ref_table_lower:
+            # Rate/FX tables affect amount calculations
+            if any(pattern in target_col_lower for pattern in ['amount', 'fee', 'base']):
+                return True
+        
+        # Use enhanced column relationship logic
+        return self._are_columns_related(ref_col_name, target_col_name)
+
+    def _are_columns_related(self, col1, col2):
+        """Dynamically determine if two column names are related based on patterns"""
+        col1_lower = col1.lower()
+        col2_lower = col2.lower()
+        
+        # Exact match
+        if col1_lower == col2_lower:
+            return True
+        
+        # Dynamic pattern detection using root name analysis
+        root1 = self._get_column_root(col1_lower)
+        root2 = self._get_column_root(col2_lower)
+        
+        # Strong similarity based on root names
+        if root1 == root2 and len(root1) > 2:  # Lowered threshold for more matches
+            return True
+        
+        # Enhanced semantic similarity with more comprehensive groupings
+        semantic_groups = [
+            # Date/Time related
+            {'date', 'time', 'posting', 'created', 'batch', 'value', 'txn', 'transaction'},
+            # ID/Key related  
+            {'id', 'key', 'hash', 'src', 'external', 'batch', 'idem', 'potency'},
+            # Amount/Money related
+            {'amount', 'currency', 'base', 'rate', 'fx', 'fee', 'money', 'value'},
+            # Account related
+            {'account', 'acct', 'no', 'number', 'customer', 'branch'},
+            # Transaction related
+            {'txn', 'transaction', 'narrative', 'desc', 'channel', 'type'},
+            # Status/Direction related
+            {'status', 'direction', 'state', 'active', 'inactive'}
+        ]
+        
+        # Find which semantic groups each column belongs to
+        col1_groups = []
+        col2_groups = []
+        
+        for i, group in enumerate(semantic_groups):
+            if any(term in col1_lower for term in group):
+                col1_groups.append(i)
+            if any(term in col2_lower for term in group):
+                col2_groups.append(i)
+        
+        # If columns share semantic groups, they might be related
+        if set(col1_groups) & set(col2_groups):
+            return True
+        
+        # Additional pattern matching for common transformations
+        # Check for substring containment (one column name contains the other's root)
+        if len(root1) > 3 and root1 in col2_lower:
+            return True
+        if len(root2) > 3 and root2 in col1_lower:
+            return True
+        
+        # Check for common banking/financial patterns
+        banking_patterns = [
+            ('account', 'acct'), ('transaction', 'txn'), ('source', 'src'),
+            ('external', 'ext'), ('reference', 'ref'), ('currency', 'ccy'),
+            ('foreign', 'fx'), ('identifier', 'id'), ('description', 'desc'),
+            ('posting', 'post'), ('batch', 'bch'), ('amount', 'amt')
+        ]
+        
+        for pattern1, pattern2 in banking_patterns:
+            if (pattern1 in col1_lower and pattern2 in col2_lower) or \
+               (pattern2 in col1_lower and pattern1 in col2_lower):
+                return True
+        
+        return False
+    
+    def _get_column_root(self, column_name):
+        """Extract the root name from a column, removing common prefixes/suffixes"""
+        original_name = column_name
+        
+        # Remove common prefixes (in order of specificity)
+        prefixes = ['txn', 'src', 'ref', 'base', 'ext', 'gl', 'fx']
+        for prefix in prefixes:
+            if column_name.startswith(prefix) and len(column_name) > len(prefix) + 1:
+                column_name = column_name[len(prefix):]
+                break
+        
+        # Remove common suffixes (in order of specificity)
+        suffixes = ['id', 'key', 'date', 'amount', 'code', 'no', 'type', 'status']
+        for suffix in suffixes:
+            if column_name.endswith(suffix) and len(column_name) > len(suffix) + 1:
+                column_name = column_name[:-len(suffix)]
+                break
+        
+        # If we removed too much, return a portion of the original
+        if len(column_name) < 2:
+            return original_name[:max(3, len(original_name)//2)]
+        
+        return column_name
 
     def _trace_end_to_end_lineage(self):
         """Enhanced end-to-end tracing using C# metadata"""

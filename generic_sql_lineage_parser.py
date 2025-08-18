@@ -286,7 +286,8 @@ class GenericSQLLineageParser:
                                     table_dict[parent_table]['columns'].add(col_name)
                 
             except Exception as e:
-                print(f"   ⚠️ Error processing statement {i+1}: {str(e)[:80]}...")
+                print(f"   ⚠️ Error processing statement {i+1}: {str(e)}")
+                print(f"   📝 Statement preview: {stmt[:200]}...")
                 continue
     
     def _get_statement_type(self, stmt):
