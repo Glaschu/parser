@@ -1473,6 +1473,86 @@
         "target_is_temp": false
       },
       {
+        "source_table": "src",
+        "source_column": "accountid",
+        "target_table": "core.ledgerwork",
+        "target_column": "accountid",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "amountbase",
+        "target_table": "core.ledgerwork",
+        "target_column": "amountbase",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "batchid",
+        "target_table": "core.ledgerwork",
+        "target_column": "batchid",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "direction",
+        "target_table": "core.ledgerwork",
+        "target_column": "direction",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "feeamount",
+        "target_table": "core.ledgerwork",
+        "target_column": "feeamount",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "hashid",
+        "target_table": "core.ledgerwork",
+        "target_column": "hashid",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "narrative",
+        "target_table": "core.ledgerwork",
+        "target_column": "narrative",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "postingdate",
+        "target_table": "core.ledgerwork",
+        "target_column": "postingdate",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "riskscore",
+        "target_table": "core.ledgerwork",
+        "target_column": "riskscore",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
+        "source_table": "src",
+        "source_column": "txntype",
+        "target_table": "core.ledgerwork",
+        "target_column": "txntype",
+        "source_is_temp": true,
+        "target_is_temp": false
+      },
+      {
         "source_table": "feerule",
         "source_column": "feeflat",
         "target_table": "feecalc",
@@ -2569,6 +2649,14 @@
         "target_is_temp": true
       },
       {
+        "source_table": "#post",
+        "source_column": "accountid",
+        "target_table": "src",
+        "target_column": "accountid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
         "source_table": "slice",
         "source_column": "accountid",
         "target_table": "src",
@@ -2594,6 +2682,14 @@
       },
       {
         "source_table": "#post",
+        "source_column": "batchid",
+        "target_table": "src",
+        "target_column": "batchid",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
         "source_column": "direction",
         "target_table": "src",
         "target_column": "direction",
@@ -2606,6 +2702,22 @@
         "target_table": "src",
         "target_column": "direction",
         "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "feeamount",
+        "target_table": "src",
+        "target_column": "feeamount",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#valid",
+        "source_column": "hashid",
+        "target_table": "src",
+        "target_column": "hashid",
+        "source_is_temp": true,
         "target_is_temp": true
       },
       {
@@ -2665,6 +2777,30 @@
         "target_is_temp": true
       },
       {
+        "source_table": "#post",
+        "source_column": "narrative",
+        "target_table": "src",
+        "target_column": "narrative",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "staging.transactions",
+        "source_column": "narrative",
+        "target_table": "src",
+        "target_column": "narrative",
+        "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "postingdate",
+        "target_table": "src",
+        "target_column": "postingdate",
+        "source_is_temp": true,
+        "target_is_temp": true
+      },
+      {
         "source_table": "#acct",
         "source_column": "productcode",
         "target_table": "src",
@@ -2678,6 +2814,14 @@
         "target_table": "src",
         "target_column": "productcode",
         "source_is_temp": false,
+        "target_is_temp": true
+      },
+      {
+        "source_table": "#post",
+        "source_column": "riskscore",
+        "target_table": "src",
+        "target_column": "riskscore",
+        "source_is_temp": true,
         "target_is_temp": true
       },
       {
@@ -2988,7 +3132,7 @@
   },
   "merge_patterns": [
     {
-      "source_table": "temp_table_pattern",
+      "source_table": "MERGE_SOURCE",
       "target_table": "Core.LedgerWork",
       "join_columns": [],
       "update_columns": [],
@@ -2996,5 +3140,5 @@
     }
   ],
   "temp_table_patterns": [],
-  "analysis_timestamp": "2025-08-18T21:07:37Z"
+  "analysis_timestamp": "2025-08-18T21:43:55Z"
 }
