@@ -1,0 +1,2625 @@
+{
+  "openlineage_version": "1.2.0",
+  "generated_at": "2025-08-19T20:42:34.323855Z",
+  "generator": "SQL Lineage Parser - C# Edition",
+  "procedure": "dbo.usp_ProcessDailyCoreBankingSettlement_Monster",
+  "events": [
+    {
+      "eventType": "START",
+      "eventTime": "2025-08-19T20:42:34.322655Z",
+      "run": {
+        "runId": "f8d617e5-3a42-45a6-9724-1e4a6155ca6e",
+        "facets": {
+          "nominalTime": {
+            "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+            "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/NominalTimeRunFacet.json",
+            "nominalStartTime": "2025-08-19T20:42:34.322778Z"
+          }
+        }
+      },
+      "job": {
+        "namespace": "banking_settlement",
+        "name": "dbo.usp_ProcessDailyCoreBankingSettlement_Monster",
+        "facets": {
+          "sql": {
+            "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+            "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SqlJobFacet.json",
+            "query": "-- dbo.usp_ProcessDailyCoreBankingSettlement_Monster\n-- Banking settlement procedure with complex transformations\n-- Processed at 2025-08-19T20:42:34.322778Z"
+          }
+        }
+      },
+      "inputs": [
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.account",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "accountid",
+                  "type": "INT",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "accountno",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "balance",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "status",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.currencyrate",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "currency",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.currencyrate"
+                },
+                {
+                  "name": "rate",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.currencyrate"
+                },
+                {
+                  "name": "effectivedate",
+                  "type": "DATE",
+                  "description": "Column from ref.currencyrate"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.feeconfig",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.feeconfig"
+                },
+                {
+                  "name": "feeamount",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.feeconfig"
+                },
+                {
+                  "name": "feetype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.feeconfig"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.glmap",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "gl_debit",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "gl_credit",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.product",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                },
+                {
+                  "name": "productname",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                },
+                {
+                  "name": "category",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "staging.transactions",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "txnexternalid",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "accountno",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "amount",
+                  "type": "DECIMAL",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "currency",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "direction",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column from staging.transactions"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "outputs": [],
+      "producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0"
+    },
+    {
+      "eventType": "RUNNING",
+      "eventTime": "2025-08-19T20:42:35.322655Z",
+      "run": {
+        "runId": "f8d617e5-3a42-45a6-9724-1e4a6155ca6e",
+        "facets": {
+          "nominalTime": {
+            "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+            "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/NominalTimeRunFacet.json",
+            "nominalStartTime": "2025-08-19T20:42:34.323168Z"
+          }
+        }
+      },
+      "job": {
+        "namespace": "banking_settlement",
+        "name": "dbo.usp_ProcessDailyCoreBankingSettlement_Monster",
+        "facets": {
+          "sql": {
+            "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+            "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SqlJobFacet.json",
+            "query": "-- dbo.usp_ProcessDailyCoreBankingSettlement_Monster\n-- Banking settlement procedure with complex transformations\n-- Processed at 2025-08-19T20:42:34.323168Z"
+          }
+        }
+      },
+      "inputs": [
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.account",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "accountid",
+                  "type": "INT",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "accountno",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "balance",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "status",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.currencyrate",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "currency",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.currencyrate"
+                },
+                {
+                  "name": "rate",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.currencyrate"
+                },
+                {
+                  "name": "effectivedate",
+                  "type": "DATE",
+                  "description": "Column from ref.currencyrate"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.feeconfig",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.feeconfig"
+                },
+                {
+                  "name": "feeamount",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.feeconfig"
+                },
+                {
+                  "name": "feetype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.feeconfig"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.glmap",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "gl_debit",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "gl_credit",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.product",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                },
+                {
+                  "name": "productname",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                },
+                {
+                  "name": "category",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "staging.transactions",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "txnexternalid",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "accountno",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "amount",
+                  "type": "DECIMAL",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "currency",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "direction",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column from staging.transactions"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "outputs": [],
+      "producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0"
+    },
+    {
+      "eventType": "COMPLETE",
+      "eventTime": "2025-08-19T20:42:36.322655Z",
+      "run": {
+        "runId": "f8d617e5-3a42-45a6-9724-1e4a6155ca6e",
+        "facets": {
+          "nominalTime": {
+            "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+            "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/NominalTimeRunFacet.json",
+            "nominalStartTime": "2025-08-19T20:42:34.323494Z"
+          }
+        }
+      },
+      "job": {
+        "namespace": "banking_settlement",
+        "name": "dbo.usp_ProcessDailyCoreBankingSettlement_Monster",
+        "facets": {
+          "sql": {
+            "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+            "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SqlJobFacet.json",
+            "query": "-- dbo.usp_ProcessDailyCoreBankingSettlement_Monster\n-- Banking settlement procedure with complex transformations\n-- Processed at 2025-08-19T20:42:34.323494Z"
+          }
+        }
+      },
+      "inputs": [
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.account",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "accountid",
+                  "type": "INT",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "accountno",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "balance",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.account"
+                },
+                {
+                  "name": "status",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.account"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.currencyrate",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "currency",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.currencyrate"
+                },
+                {
+                  "name": "rate",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.currencyrate"
+                },
+                {
+                  "name": "effectivedate",
+                  "type": "DATE",
+                  "description": "Column from ref.currencyrate"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.feeconfig",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.feeconfig"
+                },
+                {
+                  "name": "feeamount",
+                  "type": "DECIMAL",
+                  "description": "Column from ref.feeconfig"
+                },
+                {
+                  "name": "feetype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.feeconfig"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.glmap",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "gl_debit",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                },
+                {
+                  "name": "gl_credit",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.glmap"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ref.product",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "productcode",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                },
+                {
+                  "name": "productname",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                },
+                {
+                  "name": "category",
+                  "type": "VARCHAR",
+                  "description": "Column from ref.product"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "staging.transactions",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "txnexternalid",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "accountno",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "amount",
+                  "type": "DECIMAL",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "currency",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "direction",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column from staging.transactions"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column from staging.transactions"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "namespace": "banking_settlement",
+          "name": "audit.failedtxn",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "txnexternalid",
+                  "type": "VARCHAR",
+                  "description": "Column in audit.failedtxn"
+                },
+                {
+                  "name": "reason",
+                  "type": "TEXT",
+                  "description": "Column in audit.failedtxn"
+                },
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in audit.failedtxn"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in audit.failedtxn"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {
+                "reason": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.stage",
+                      "field": "invalidreason",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "txnexternalid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txnexternalid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dataset": [
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.stage",
+                  "field": "invalidreason",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "txnexternalid",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "audit.reconsummary",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in audit.reconsummary"
+                },
+                {
+                  "name": "totalrecords",
+                  "type": "INT",
+                  "description": "Column in audit.reconsummary"
+                },
+                {
+                  "name": "totalamount",
+                  "type": "DECIMAL",
+                  "description": "Column in audit.reconsummary"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in audit.reconsummary"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {},
+              "dataset": []
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "audit.steplog",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "stepname",
+                  "type": "VARCHAR",
+                  "description": "Column in audit.steplog"
+                },
+                {
+                  "name": "status",
+                  "type": "VARCHAR",
+                  "description": "Column in audit.steplog"
+                },
+                {
+                  "name": "message",
+                  "type": "TEXT",
+                  "description": "Column in audit.steplog"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in audit.steplog"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {},
+              "dataset": []
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "core.balances",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "accountid",
+                  "type": "INT",
+                  "description": "Column in core.balances"
+                },
+                {
+                  "name": "balance",
+                  "type": "DECIMAL",
+                  "description": "Column in core.balances"
+                },
+                {
+                  "name": "currency",
+                  "type": "VARCHAR",
+                  "description": "Column in core.balances"
+                },
+                {
+                  "name": "lastupdated",
+                  "type": "TIMESTAMP",
+                  "description": "Column in core.balances"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {},
+              "dataset": []
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "core.gl",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "hashid",
+                  "type": "VARCHAR",
+                  "description": "Column in core.gl"
+                },
+                {
+                  "name": "glaccount",
+                  "type": "VARCHAR",
+                  "description": "Column in core.gl"
+                },
+                {
+                  "name": "debit",
+                  "type": "DECIMAL",
+                  "description": "Column in core.gl"
+                },
+                {
+                  "name": "credit",
+                  "type": "DECIMAL",
+                  "description": "Column in core.gl"
+                },
+                {
+                  "name": "postingdate",
+                  "type": "DATE",
+                  "description": "Column in core.gl"
+                },
+                {
+                  "name": "narrative",
+                  "type": "TEXT",
+                  "description": "Column in core.gl"
+                },
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in core.gl"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in core.gl"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {
+                "batchid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "core.glwork",
+                      "field": "batchid",
+                      "transformations": [
+                        {
+                          "type": "DIRECT",
+                          "subtype": "IDENTITY",
+                          "description": "Direct column copy",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "narrative": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txnexternalid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "currency",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "amount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "accountno",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txntype",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "hashid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txnexternalid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "currency",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "amount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "accountno",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txntype",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "postingdate": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.gl",
+                      "field": "postingdate",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "debit": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "amount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.x",
+                      "field": "fxrate",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (7 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "credit": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "amount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.x",
+                      "field": "fxrate",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (7 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "glaccount": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "ref.glmap",
+                      "field": "gl_credit",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "ref.glmap",
+                      "field": "gl_debit",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dataset": [
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "txnexternalid",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "currency",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.gl",
+                  "field": "postingdate",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "amount",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "ref.glmap",
+                  "field": "gl_credit",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "accountno",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "ref.glmap",
+                  "field": "gl_debit",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "txntype",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "direction",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.x",
+                  "field": "fxrate",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "core.glwork",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "hashid",
+                  "type": "VARCHAR",
+                  "description": "Column in core.glwork"
+                },
+                {
+                  "name": "glaccount",
+                  "type": "VARCHAR",
+                  "description": "Column in core.glwork"
+                },
+                {
+                  "name": "debit",
+                  "type": "DECIMAL",
+                  "description": "Column in core.glwork"
+                },
+                {
+                  "name": "credit",
+                  "type": "DECIMAL",
+                  "description": "Column in core.glwork"
+                },
+                {
+                  "name": "postingdate",
+                  "type": "DATE",
+                  "description": "Column in core.glwork"
+                },
+                {
+                  "name": "narrative",
+                  "type": "TEXT",
+                  "description": "Column in core.glwork"
+                },
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in core.glwork"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {},
+              "dataset": []
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "core.ledger",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "idempotencykey",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "accountid",
+                  "type": "INT",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "postingdate",
+                  "type": "DATE",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "amountbase",
+                  "type": "DECIMAL",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "direction",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "feeamount",
+                  "type": "DECIMAL",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "riskscore",
+                  "type": "INT",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "narrative",
+                  "type": "TEXT",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledger"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in core.ledger"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {
+                "idempotencykey": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "core.ledgerwork",
+                      "field": "idempotencykey",
+                      "transformations": [
+                        {
+                          "type": "DIRECT",
+                          "subtype": "IDENTITY",
+                          "description": "Direct column copy",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "narrative": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.j",
+                      "field": "productcategory",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (6 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "narrative",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.j",
+                      "field": "productname",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (6 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "batchid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.post",
+                      "field": "batchid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "amountbase": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "amount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.x",
+                      "field": "fxrate",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (5 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "postingdate": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.post",
+                      "field": "postingdate",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "txntype": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txntype",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "direction": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "riskscore": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.stage",
+                      "field": "riskscore",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (4 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "accountid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.j",
+                      "field": "accountid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (6 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "feeamount": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.stage",
+                      "field": "feeamount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (4 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dataset": [
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.j",
+                  "field": "productcategory",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.post",
+                  "field": "batchid",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "amount",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "narrative",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.post",
+                  "field": "postingdate",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "txntype",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "direction",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.stage",
+                  "field": "riskscore",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.j",
+                  "field": "accountid",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.stage",
+                  "field": "feeamount",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.x",
+                  "field": "fxrate",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.j",
+                  "field": "productname",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "core.ledgerfinal",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "idempotencykey",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "accountid",
+                  "type": "INT",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "postingdate",
+                  "type": "DATE",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "amountbase",
+                  "type": "DECIMAL",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "direction",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "feeamount",
+                  "type": "DECIMAL",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "riskscore",
+                  "type": "INT",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "narrative",
+                  "type": "TEXT",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerfinal"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in core.ledgerfinal"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {
+                "idempotencykey": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "core.ledgerwork",
+                      "field": "idempotencykey",
+                      "transformations": [
+                        {
+                          "type": "DIRECT",
+                          "subtype": "IDENTITY",
+                          "description": "Direct column copy",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "narrative": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.j",
+                      "field": "productcategory",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (6 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "narrative",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.j",
+                      "field": "productname",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (6 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "batchid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.post",
+                      "field": "batchid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "amountbase": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "amount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.x",
+                      "field": "fxrate",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (5 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "postingdate": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.post",
+                      "field": "postingdate",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "txntype": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txntype",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "direction": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (3 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "riskscore": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.stage",
+                      "field": "riskscore",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (4 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "accountid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "cte.j",
+                      "field": "accountid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (6 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "feeamount": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "temp.stage",
+                      "field": "feeamount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (4 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dataset": [
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.j",
+                  "field": "productcategory",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.post",
+                  "field": "batchid",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "amount",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "narrative",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.post",
+                  "field": "postingdate",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "txntype",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "direction",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.stage",
+                  "field": "riskscore",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.j",
+                  "field": "accountid",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "temp.stage",
+                  "field": "feeamount",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.x",
+                  "field": "fxrate",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "cte.j",
+                  "field": "productname",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "core.ledgerwork",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "idempotencykey",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "accountid",
+                  "type": "INT",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "postingdate",
+                  "type": "DATE",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "amountbase",
+                  "type": "DECIMAL",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "direction",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "txntype",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "feeamount",
+                  "type": "DECIMAL",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "riskscore",
+                  "type": "INT",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "narrative",
+                  "type": "TEXT",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in core.ledgerwork"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in core.ledgerwork"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {
+                "hashid": {
+                  "inputFields": [
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txnexternalid",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "currency",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "amount",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "accountno",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "txntype",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    },
+                    {
+                      "namespace": "banking_settlement",
+                      "name": "staging.transactions",
+                      "field": "direction",
+                      "transformations": [
+                        {
+                          "type": "INDIRECT",
+                          "subtype": "TRANSFORMATION",
+                          "description": "Multi-step transformation (2 steps)",
+                          "masking": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dataset": [
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "txnexternalid",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "currency",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "amount",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "accountno",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "txntype",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                },
+                {
+                  "namespace": "banking_settlement",
+                  "name": "staging.transactions",
+                  "field": "direction",
+                  "transformations": [
+                    {
+                      "type": "INDIRECT",
+                      "subtype": "AGGREGATION",
+                      "description": "Part of complex transformation chain",
+                      "masking": false
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "namespace": "banking_settlement",
+          "name": "ops.batchregistry",
+          "facets": {
+            "schema": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/SchemaDatasetFacet.json",
+              "fields": [
+                {
+                  "name": "batchid",
+                  "type": "VARCHAR",
+                  "description": "Column in ops.batchregistry"
+                },
+                {
+                  "name": "status",
+                  "type": "VARCHAR",
+                  "description": "Column in ops.batchregistry"
+                },
+                {
+                  "name": "createdat",
+                  "type": "TIMESTAMP",
+                  "description": "Column in ops.batchregistry"
+                }
+              ]
+            },
+            "columnLineage": {
+              "_producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0",
+              "_schemaURL": "https://openlineage.io/spec/facets/1-2-0/ColumnLineageDatasetFacet.json",
+              "fields": {},
+              "dataset": []
+            }
+          }
+        }
+      ],
+      "producer": "https://github.com/Glaschu/parser/sql-lineage-parser/1.0"
+    }
+  ],
+  "summary": {
+    "total_events": 3,
+    "input_datasets": 6,
+    "output_datasets": 10,
+    "total_lineages": 148
+  }
+}

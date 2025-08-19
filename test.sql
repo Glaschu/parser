@@ -225,11 +225,19 @@ BEGIN
         SELECT * FROM #Raw
     ), A AS (
         SELECT * FROM #Acct
+    ), P AS (
+        SELECT * FROM Ref.Product
+    ), C AS (
+        SELECT * FROM Ref.CurrencyRate
     ), J AS (
         SELECT R.*, A.AccountId, A.CustomerId, A.BranchCode, A.Status AS AcctStatus,
-               A.BaseCurrency, A.OverdraftLimit, A.ProductCode
+               A.BaseCurrency, A.OverdraftLimit, A.ProductCode,
+               P.ProductName, P.Category AS ProductCategory,
+               C.Rate AS ReferenceRate
           FROM R
           LEFT JOIN A ON A.AccountNo = R.AccountNo
+          LEFT JOIN P ON P.ProductCode = A.ProductCode
+          INNER JOIN C ON C.Currency = R.Currency AND C.AsOf = R.BatchDate
     ), X AS (
         SELECT J.*,
                COALESCE(fr.Rate, 1.00000000) AS FxRate,
@@ -250,7 +258,8 @@ BEGIN
            x.TxnDate, x.ValueDate, x.Amount, x.Currency,
            ROUND(x.Amount * x.FxRate, 2) AS AmountBase,
            @DefaultCurrency AS CurrencyBase,
-           x.Direction, x.TxnType, x.Channel, x.Narrative,
+           x.Direction, x.TxnType, x.Channel, 
+           ISNULL(x.Narrative, CONCAT('Product: ', ISNULL(x.ProductName, 'Unknown'), ' - Category: ', ISNULL(x.ProductCategory, 'N/A'))) AS Narrative,
            NULL AS RiskScore, NULL AS FeeAmount, NULL AS FeeCode,
            0 AS IsDuplicate, NULL AS IsValid, NULL AS InvalidReason,
            CONVERT(VARBINARY(16), HASHBYTES('MD5',
